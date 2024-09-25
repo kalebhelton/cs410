@@ -2,8 +2,6 @@
  * Authors: Sierra Jackson, Kaleb Helton, Simon Hale, Luke Graham
  * Reviewers: Emily Krugman, Taylor Oxley*/
 
-import java.io.IOException;
-
 public class Scanner {
 
     // The inputs are all ascii values (0-127) -> 128 inputs
@@ -11,7 +9,6 @@ public class Scanner {
     private static final int STATES = 44;
     private static final boolean[] ACCEPT = new boolean[STATES];
     private static final int[][] FSM = new int[STATES][INPUTS];
-
 
     public static void initializeStates() {
         ACCEPT[1] = true;
@@ -34,28 +31,6 @@ public class Scanner {
         ACCEPT[19] = true;
         ACCEPT[20] = true;
         ACCEPT[21] = true;
-        ACCEPT[22] = true;
-        ACCEPT[23] = true;
-        ACCEPT[24] = true;
-        ACCEPT[25] = true;
-        ACCEPT[26] = true;
-        ACCEPT[27] = true;
-        ACCEPT[28] = true;
-        ACCEPT[29] = true;
-        ACCEPT[30] = true;
-        ACCEPT[31] = true;
-        ACCEPT[32] = true;
-        ACCEPT[33] = true;
-        ACCEPT[34] = true;
-        ACCEPT[35] = true;
-        ACCEPT[36] = true;
-        ACCEPT[37] = true;
-        ACCEPT[38] = true;
-        ACCEPT[39] = true;
-        ACCEPT[40] = true;
-        ACCEPT[41] = true;
-        ACCEPT[42] = true;
-        ACCEPT[43] = true;
 
         // handle variables
         setStateValues(0, 'a', 'z', 1);
@@ -122,7 +97,9 @@ public class Scanner {
             FSM[states[i]][keyword.charAt(i + 1)] = states[i + 1];
         }
 
-
+        for (int state : states) {
+            ACCEPT[state] = true;
+        }
     }
 
     /**
@@ -135,7 +112,7 @@ public class Scanner {
 
         int state = 0; // starting state;
 
-        String testInput = ">=";
+        String testInput = "double";
         for (char inp : testInput.toCharArray()) {
             if (inp < INPUTS) {
                 state = FSM[state][inp]; // next state
