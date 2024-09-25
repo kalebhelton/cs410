@@ -131,6 +131,8 @@ public class Scanner {
     public static boolean finiteStateMachine() {
         initializeStates();
 
+        String input = System.console().readLine();  // takes in console input
+
         int state = 0; // starting state;
 
         String testInput = ">=";
@@ -149,6 +151,44 @@ public class Scanner {
         }
     }
 
+    public static List<String> tokenizeInput(){
+        initializeStates();
+
+        Scanner scanner = new Scanner(System.in);
+        String input = scanner.nextLine();
+
+        List<String> tokens = new ArrayList<>();
+        int state = 0;
+        StringBuilder currentToken = new StringBuilder();
+
+        for (char ch : input.toCharArray()){
+            if (ch < INPUTS){
+                state = FSM[state][ch];
+                if (state != 0){
+                    currentToken.append(ch);
+                }
+
+                else if(currentToken.length() > 0){
+                    tokens.add(currentToken.toString());
+                    currentToken.setLength(0);
+                    state = FSM[0][ch];
+                }
+            }
+
+            if (ACCEPT[state] && currentToken.length() > 0){
+                tokens.add(currentToken.toString());
+                currentToken.setLength(0);
+                state = 0;
+            }
+        }
+
+        if (currentToken.length() > 0){
+            tokens.add(currentToken.toString());
+        }
+
+        return tokens;
+    }
+
     private static void setStateValues(int state, int lower, int upper, int value) {
         for (int i = lower; i <= upper; i++) {
             if(FSM[state][i] == 0) {
@@ -157,8 +197,11 @@ public class Scanner {
         }
     }
 
+    // call the input method + print the results
     public static void main(String[] args) {
         Scanner.finiteStateMachine();
+        List<String> tokens = tokenizeInput();
+        System.out.println("Tokens: " + tokens);
     }
 
 }
