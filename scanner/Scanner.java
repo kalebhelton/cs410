@@ -2,6 +2,11 @@
  * Authors: Sierra Jackson, Kaleb Helton, Simon Hale, Luke Graham
  * Reviewers: Emily Krugman, Taylor Oxley*/
 
+
+import java.util.ArrayList;
+import java.util.List;
+
+
 public class Scanner {
 
     // The inputs are all ascii values (0-127) -> 128 inputs
@@ -10,7 +15,7 @@ public class Scanner {
     private static final boolean[] ACCEPT = new boolean[STATES];
     private static final int[][] FSM = new int[STATES][INPUTS];
 
-    public static void initializeStates() {
+	public static void initializeStates() {
         ACCEPT[1] = true;
         ACCEPT[2] = true;
         ACCEPT[4] = true;
@@ -108,8 +113,6 @@ public class Scanner {
     public static boolean finiteStateMachine() {
         initializeStates();
 
-        String input = System.console().readLine();  // takes in console input
-
         int state = 0; // starting state;
 
         String testInput = "double";
@@ -131,8 +134,8 @@ public class Scanner {
     public static List<String> tokenizeInput(){
         initializeStates();
 
-        Scanner scanner = new Scanner(System.in);
-        String input = scanner.nextLine();
+        System.out.println("Enter input to tokenize: ");
+        String input = System.console().readLine();
 
         List<String> tokens = new ArrayList<>();
         int state = 0;
