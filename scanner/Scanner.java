@@ -102,6 +102,9 @@ public class Scanner {
             FSM[states[i]][keyword.charAt(i + 1)] = states[i + 1];
         }
 
+        setStateValues(states[states.length - 1], 'a', 'z', 1);
+        setStateValues(states[states.length - 1], 'A', 'Z', 1);
+
         for (int state : states) {
             ACCEPT[state] = true;
         }
@@ -143,27 +146,34 @@ public class Scanner {
 
         for (char ch : input.toCharArray()){
             if (ch < INPUTS){
-                state = FSM[state][ch];
-                if (state != 0){
-                    currentToken.append(ch);
-                }
+                int oldState = state;
+                state = FSM[oldState][ch];
 
-                else if(currentToken.length() > 0){
-                    tokens.add(currentToken.toString());
+                if(state == 0 && currentToken.length() > 0){
+                    String tokenText = currentToken.toString();
+
+                    if (ACCEPT[oldState]) {
+                        tokens.add(tokenText);
+                    } else {
+                        System.out.println("Unaccepted token '" + tokenText + "'");
+                    }
+
                     currentToken.setLength(0);
                     state = FSM[0][ch];
                 }
-            }
 
-            if (ACCEPT[state] && currentToken.length() > 0){
-                tokens.add(currentToken.toString());
-                currentToken.setLength(0);
-                state = 0;
+                currentToken.append(ch);
             }
         }
 
         if (currentToken.length() > 0){
-            tokens.add(currentToken.toString());
+            String tokenText = currentToken.toString();
+
+            if (ACCEPT[state]) {
+                tokens.add(tokenText);
+            } else {
+                System.out.println("Unaccepted token '" + tokenText + "'");
+            }
         }
 
         return tokens;
