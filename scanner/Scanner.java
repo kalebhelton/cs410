@@ -110,32 +110,7 @@ public class Scanner {
         }
     }
 
-    /**
-     * @return true if in an accept state, otherwise false
-     */
-    public static boolean finiteStateMachine() {
-        initializeStates();
-
-        int state = 0; // starting state;
-
-        String testInput = "double";
-        for (char inp : testInput.toCharArray()) {
-            if (inp < INPUTS) {
-                state = FSM[state][inp]; // next state
-            }
-        }
-
-        if (ACCEPT[state]) {
-            System.out.println ("Accepted");
-            return true;
-        } else {
-            System.out.println("Not Accepted");
-            return false;
-        }
-    }
-
     public static List<String> tokenizeInput(){
-        initializeStates();
 
         System.out.println("Enter input to tokenize: ");
         String input = System.console().readLine();
@@ -145,28 +120,39 @@ public class Scanner {
         StringBuilder currentToken = new StringBuilder();
 
         for (char ch : input.toCharArray()){
-            if (ch < INPUTS){
+            if (ch < INPUTS) {
                 int oldState = state;
                 state = FSM[oldState][ch];
 
-                if(state == 0 && currentToken.length() > 0){
-                    String tokenText = currentToken.toString();
+                if (state != 0) {
+                    currentToken.append(ch);
+                } else {
+                    if(!currentToken.isEmpty()){
+                        String tokenText = currentToken.toString();
 
-                    if (ACCEPT[oldState]) {
-                        tokens.add(tokenText);
-                    } else {
-                        System.out.println("Unaccepted token '" + tokenText + "'");
+                        if (ACCEPT[oldState]) {
+                            tokens.add(tokenText);
+                        } else {
+                            System.out.println("Unaccepted token '" + tokenText + "'");
+                        }
+
                     }
 
                     currentToken.setLength(0);
+
+                    if (oldState != 0) {
+                        currentToken.append(ch);
+                    } else {
+                        System.out.println("Unaccepted token '" + ch + "'");
+                    }
+
                     state = FSM[0][ch];
                 }
 
-                currentToken.append(ch);
             }
         }
 
-        if (currentToken.length() > 0){
+        if (!currentToken.isEmpty()){
             String tokenText = currentToken.toString();
 
             if (ACCEPT[state]) {
@@ -189,7 +175,7 @@ public class Scanner {
 
     // call the input method + print the results
     public static void main(String[] args) {
-        Scanner.finiteStateMachine();
+        initializeStates();
         List<String> tokens = tokenizeInput();
         System.out.println("Tokens: " + tokens);
     }
