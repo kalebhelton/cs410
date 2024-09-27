@@ -110,12 +110,37 @@ public class Scanner {
         }
     }
 
-    public static List<String> tokenizeInput(){
+
+    public static class Token {
+        private String type;
+        private String value;
+    
+        public Token(String type, String value) {
+            this.type = type;
+            this.value = value;
+        }
+        //controls the output!!
+        public String toString() {
+            return value + " (" + type + ")";
+        }
+
+        //easy get methods
+        public String getType() {
+            return type;
+        }
+    
+        public String getValue() {
+            return value;
+        }
+    }
+
+
+    public static List<Token> tokenizeInput(){
 
         System.out.println("Enter input to tokenize: ");
         String input = System.console().readLine();
 
-        List<String> tokens = new ArrayList<>();
+        List<Token> tokens = new ArrayList<>();
         int state = 0;
         StringBuilder currentToken = new StringBuilder();
 
@@ -131,7 +156,7 @@ public class Scanner {
                         String tokenText = currentToken.toString();
 
                         if (ACCEPT[oldState]) {
-                            tokens.add(tokenText);
+                            tokens.add(classifyToken(oldState, tokenText));
                         } else {
                             System.out.println("Unaccepted token '" + tokenText + "'");
                         }
@@ -156,7 +181,7 @@ public class Scanner {
             String tokenText = currentToken.toString();
 
             if (ACCEPT[state]) {
-                tokens.add(tokenText);
+                tokens.add(classifyToken(state, tokenText));
             } else {
                 System.out.println("Unaccepted token '" + tokenText + "'");
             }
@@ -173,11 +198,57 @@ public class Scanner {
         }
     }
 
+    private static Token classifyToken(int state, String tokenText) {
+        
+        //trim to remove whitespace for character checking
+        tokenText = tokenText.trim();
+        String type;
+
+        //variables
+        if (state == 1) {
+            type = "Identifier"; 
+        } 
+        //numbers
+        else if (state == 17) {
+            type = "Literal";
+        } 
+        //keywords
+        else if (tokenText.equals("for") || tokenText.equals("if") || tokenText.equals("while") || tokenText.equals("else") || tokenText.equals("int") || tokenText.equals("double")) {
+            type = "Keyword";
+        } 
+        //operators
+        else if (tokenText.length() == 1 && "+-*/<=!>".indexOf(tokenText.charAt(0)) != -1) {
+            type = "Operator";
+        } 
+        // double character operators
+        else if (tokenText.equals("==") || tokenText.equals(">=") || tokenText.equals("<=") || tokenText.equals("!=")) {
+            type = "Operator";
+        }
+        //semicolon
+        else if (tokenText.equals(";")) {
+            type = "Punctuation";
+        } 
+        //decimal point
+        else if (tokenText.equals(".")) {
+            type = "Decimal Point";
+        }
+        else if ("(){}".contains(tokenText)) {
+            type = "Punctuation";
+        }
+        //if there are unknowns then there is a problem, because we should be able to classify everything
+        else {
+            type = "Unknown";
+        }
+        //assign the classified type to the token
+        return new Token(type, tokenText);
+    }
+
     // call the input method + print the results
     public static void main(String[] args) {
         initializeStates();
-        List<String> tokens = tokenizeInput();
+        List<Token> tokens = tokenizeInput();
         System.out.println("Tokens: " + tokens);
+
     }
 
 }
