@@ -6,36 +6,35 @@
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Scanner {
-
     // The inputs are all ascii values (0-127) -> 128 inputs
     private static final int INPUTS = 128;
-    private static final int STATES = 44;
-    private static final boolean[] ACCEPT = new boolean[STATES];
+    private static final int STATES = 46;
+    private static final TokenType[] ACCEPT = new TokenType[STATES];
     private static final int[][] FSM = new int[STATES][INPUTS];
 
 	public static void initializeStates() {
-        ACCEPT[1] = true;
-        ACCEPT[2] = true;
-        ACCEPT[4] = true;
-        ACCEPT[5] = true;
-        ACCEPT[6] = true;
-        ACCEPT[7] = true;
-        ACCEPT[8] = true;
-        ACCEPT[9] = true;
-        ACCEPT[10] = true;
-        ACCEPT[11] = true;
-        ACCEPT[12] = true;
-        ACCEPT[13] = true;
-        ACCEPT[14] = true;
-        ACCEPT[15] = true;
-        ACCEPT[16] = true;
-        ACCEPT[17] = true;
-        ACCEPT[18] = true;
-        ACCEPT[19] = true;
-        ACCEPT[20] = true;
-        ACCEPT[21] = true;
+        ACCEPT[1] = TokenType.Identifier;
+        ACCEPT[2] = TokenType.Semicolon;
+        ACCEPT[4] = TokenType.NotEqual;
+        ACCEPT[5] = TokenType.Assign;
+        ACCEPT[6] = TokenType.Equal;
+        ACCEPT[7] = TokenType.LessThan;
+        ACCEPT[8] = TokenType.LessThanOrEqual;
+        ACCEPT[9] = TokenType.GreaterThan;
+        ACCEPT[10] = TokenType.GreaterThanOrEqual;
+        ACCEPT[11] = TokenType.Add;
+        ACCEPT[12] = TokenType.Increment;
+        ACCEPT[13] = TokenType.Subtract;
+        ACCEPT[14] = TokenType.Decrement;
+        ACCEPT[15] = TokenType.Multiply;
+        ACCEPT[16] = TokenType.Divide;
+        ACCEPT[17] = TokenType.Integer;
+        ACCEPT[18] = TokenType.ClosingParenthesis;
+        ACCEPT[19] = TokenType.OpeningParenthesis;
+        ACCEPT[20] = TokenType.ClosingCurlyBracket;
+        ACCEPT[21] = TokenType.OpeningCurlyBracket;
+        ACCEPT[45] = TokenType.Double;
 
         // handle variables
         setStateValues(0, 'a', 'z', 1);
@@ -46,14 +45,16 @@ public class Scanner {
         // handle numbers
         setStateValues(0, '0', '9', 17);
         setStateValues(17, '0', '9', 17);
+        FSM[17]['.'] = 44;
+        setStateValues(44, '0', '9', 45);
 
         // handle keywords
-        addKeyword("for", new int[]{22, 23, 24});
-        addKeyword("if", new int[]{25, 26});
-        addKeyword("int", new int[]{25, 27, 28});
-        addKeyword("while", new int[]{29, 30, 31, 32, 33});
-        addKeyword("else", new int[]{34, 35, 36, 37});
-        addKeyword("double", new int[]{38, 39, 40, 41, 42, 43});
+        addKeyword("for", TokenType.KeywordFor, new int[]{22, 23, 24});
+        addKeyword("if", TokenType.KeywordIf, new int[]{25, 26});
+        addKeyword("int", TokenType.KeywordInt, new int[]{25, 27, 28});
+        addKeyword("while", TokenType.KeywordWhile, new int[]{29, 30, 31, 32, 33});
+        addKeyword("else", TokenType.KeywordElse, new int[]{34, 35, 36, 37});
+        addKeyword("double", TokenType.KeywordDouble, new int[]{38, 39, 40, 41, 42, 43});
 
         FSM[0][';'] = 2;
 
@@ -88,7 +89,7 @@ public class Scanner {
         FSM[0]['{'] = 21;
     }
 
-    private static void addKeyword(String keyword, int[] states) {
+    private static void addKeyword(String keyword, TokenType type, int[] states) {
         if (keyword.length() != states.length) {
             throw new IllegalArgumentException("Keyword and states must have the same length");
         }
@@ -100,32 +101,30 @@ public class Scanner {
             setStateValues(states[i], 'A', 'Z', 1);
 
             FSM[states[i]][keyword.charAt(i + 1)] = states[i + 1];
+            ACCEPT[states[i]] = TokenType.Identifier;
         }
 
         setStateValues(states[states.length - 1], 'a', 'z', 1);
         setStateValues(states[states.length - 1], 'A', 'Z', 1);
-
-        for (int state : states) {
-            ACCEPT[state] = true;
-        }
+        ACCEPT[states[states.length - 1]] = type;
     }
 
-
     public static class Token {
-        private String type;
-        private String value;
+        private final TokenType type;
+        private final String value;
     
-        public Token(String type, String value) {
+        public Token(TokenType type, String value) {
             this.type = type;
             this.value = value;
         }
+
         //controls the output!!
         public String toString() {
             return value + " (" + type + ")";
         }
 
         //easy get methods
-        public String getType() {
+        public TokenType getType() {
             return type;
         }
     
@@ -134,9 +133,7 @@ public class Scanner {
         }
     }
 
-
     public static List<Token> tokenizeInput(){
-
         System.out.println("Enter input to tokenize: ");
         String input = System.console().readLine();
 
@@ -155,12 +152,11 @@ public class Scanner {
                     if(!currentToken.isEmpty()){
                         String tokenText = currentToken.toString();
 
-                        if (ACCEPT[oldState]) {
-                            tokens.add(classifyToken(oldState, tokenText));
+                        if (ACCEPT[oldState] != null) {
+                            tokens.add(new Token(ACCEPT[oldState], tokenText));
                         } else {
                             System.out.println("Unaccepted token '" + tokenText + "'");
                         }
-
                     }
 
                     currentToken.setLength(0);
@@ -180,8 +176,8 @@ public class Scanner {
         if (!currentToken.isEmpty()){
             String tokenText = currentToken.toString();
 
-            if (ACCEPT[state]) {
-                tokens.add(classifyToken(state, tokenText));
+            if (ACCEPT[state] != null) {
+                tokens.add(new Token(ACCEPT[state], tokenText));
             } else {
                 System.out.println("Unaccepted token '" + tokenText + "'");
             }
@@ -198,57 +194,10 @@ public class Scanner {
         }
     }
 
-    private static Token classifyToken(int state, String tokenText) {
-        
-        //trim to remove whitespace for character checking
-        tokenText = tokenText.trim();
-        String type;
-
-        //variables
-        if (state == 1) {
-            type = "Identifier"; 
-        } 
-        //numbers
-        else if (state == 17) {
-            type = "Literal";
-        } 
-        //keywords
-        else if (tokenText.equals("for") || tokenText.equals("if") || tokenText.equals("while") || tokenText.equals("else") || tokenText.equals("int") || tokenText.equals("double")) {
-            type = "Keyword";
-        } 
-        //operators
-        else if (tokenText.length() == 1 && "+-*/<=!>".indexOf(tokenText.charAt(0)) != -1) {
-            type = "Operator";
-        } 
-        // double character operators
-        else if (tokenText.equals("==") || tokenText.equals(">=") || tokenText.equals("<=") || tokenText.equals("!=")) {
-            type = "Operator";
-        }
-        //semicolon
-        else if (tokenText.equals(";")) {
-            type = "Punctuation";
-        } 
-        //decimal point
-        else if (tokenText.equals(".")) {
-            type = "Decimal Point";
-        }
-        else if ("(){}".contains(tokenText)) {
-            type = "Punctuation";
-        }
-        //if there are unknowns then there is a problem, because we should be able to classify everything
-        else {
-            type = "Unknown";
-        }
-        //assign the classified type to the token
-        return new Token(type, tokenText);
-    }
-
     // call the input method + print the results
     public static void main(String[] args) {
         initializeStates();
         List<Token> tokens = tokenizeInput();
         System.out.println("Tokens: " + tokens);
-
     }
-
 }
