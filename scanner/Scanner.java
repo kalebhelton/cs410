@@ -34,6 +34,7 @@ public class Scanner {
         ACCEPT[19] = TokenType.OpeningParenthesis;
         ACCEPT[20] = TokenType.ClosingCurlyBracket;
         ACCEPT[21] = TokenType.OpeningCurlyBracket;
+        ACCEPT[44] = TokenType.Double;
         ACCEPT[45] = TokenType.Double;
 
         // handle variables
@@ -45,8 +46,8 @@ public class Scanner {
         // handle numbers
         setStateValues(0, '0', '9', 17);
         setStateValues(17, '0', '9', 17);
-        FSM[17]['.'] = 44;
-        setStateValues(44, '0', '9', 45);
+
+        setStateValues(44, '0', '9', 44);
 
         // handle keywords
         addKeyword("for", TokenType.KeywordFor, new int[]{22, 23, 24});
@@ -79,6 +80,8 @@ public class Scanner {
         FSM[0]['*'] = 15;
 
         FSM[0]['/'] = 16;
+
+        FSM[17]['.'] = 44;
 
         FSM[0][')'] = 18;
 
