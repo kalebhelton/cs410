@@ -172,20 +172,16 @@ public class ScannerProject {
                     }
 
                     currentToken.setLength(0);
-
-                    if (oldState != 0) {
-                        currentToken.append(ch);
-                    } else {
-                        System.out.println("Unaccepted token '" + ch + "'");
-                    }
-
                     state = FSM[0][ch];
-                }
 
+                    if (state != 0) {
+                        currentToken.append(ch);
+                    }
+                }
             }
         }
 
-        if (!currentToken.isEmpty()){
+        if (!currentToken.isEmpty()) {
             String tokenText = currentToken.toString();
 
             if (ACCEPT[state] != null) {
