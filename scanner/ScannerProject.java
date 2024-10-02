@@ -3,10 +3,13 @@
  * Reviewers: Emily Krugman, Taylor Oxley*/
 
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
-public class Scanner {
+public class ScannerProject {
     // The inputs are all ascii values (0-127) -> 128 inputs
     private static final int INPUTS = 128;
     private static final int STATES = 46;
@@ -136,15 +139,21 @@ public class Scanner {
         }
     }
 
-    public static List<Token> tokenizeInput(){
-        System.out.println("Enter input to tokenize: ");
-        String input = System.console().readLine();
+    public static List<Token> tokenizeInput(String filename) throws FileNotFoundException {
+        StringBuilder input = new StringBuilder();
+        File inputFile = new File(filename);
+        Scanner sc = new Scanner(inputFile);
+
+        while (sc.hasNextLine()) {
+            input.append(sc.nextLine());
+        }
+        sc.close();
 
         List<Token> tokens = new ArrayList<>();
         int state = 0;
         StringBuilder currentToken = new StringBuilder();
 
-        for (char ch : input.toCharArray()){
+        for (char ch : input.toString().toCharArray()){
             if (ch < INPUTS) {
                 int oldState = state;
                 state = FSM[oldState][ch];
@@ -198,9 +207,9 @@ public class Scanner {
     }
 
     // call the input method + print the results
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
         initializeStates();
-        List<Token> tokens = tokenizeInput();
+        List<Token> tokens = tokenizeInput("input.txt");
         System.out.println("Tokens: " + tokens);
     }
 }
