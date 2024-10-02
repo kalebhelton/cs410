@@ -176,6 +176,8 @@ public class ScannerProject {
 
                     if (state != 0) {
                         currentToken.append(ch);
+                    } else if (ch != ' ') {
+                        System.out.println("Unaccepted character '" + ch + "'");
                     }
                 }
             }
