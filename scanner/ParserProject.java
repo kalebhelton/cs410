@@ -1,3 +1,8 @@
+/*
+ * Authors: Sierra Jackson, Kaleb Helton, Taylor Oxley
+ * Reviewers: Emily Krugman, Taylor Oxley, Luke Graham
+ */
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -39,23 +44,28 @@ public class ParserProject {
         return currentToken != null && currentToken.getType() == type;
     }
 
-    public List<AtomOperations> parse() {  // Start Parsing -> Returns List of Generated Atoms
+    public List<AtomOperations> parse() throws Exception {  // Start Parsing -> Returns List of Generated Atoms
         parseStatements();
+        parseBlock();
+        // if input is empty -> return
         return atom;
+
+        // else -> throw an exception
     }
 
-    private void parseStatements() {  // Parses a Sequence of Statements
+    private void parseStatements() throws Exception {  // Parses a Sequence of Statements
         while (currentToken != null) {
             parseStatement();
         }
     }
 
-    private void parseStatement() {  // Parses a Single Statement Based on Current Token Type
+    private void parseStatement() throws Exception {  // Parses a Single Statement Based on Current Token Type
         if (accept(TokenType.KeywordIf)) {
             parseIf();
         } else if (accept(TokenType.KeywordWhile)) {
             parseWhile();
         } else if (accept(TokenType.KeywordFor)) {
+
             parseFor();
         } else if (accept(TokenType.KeywordInt) || accept(TokenType.KeywordDouble)) {
             parseAssignment();
@@ -64,7 +74,7 @@ public class ParserProject {
         }
     }
 
-    private void parseIf() {
+    private void parseIf() throws Exception {
         expect(TokenType.OpeningParenthesis);
         parseExpression();
         expect(TokenType.ClosingParenthesis);
@@ -73,16 +83,24 @@ public class ParserProject {
         if (accept(TokenType.KeywordElse)) {
             parseBlock();
         }
+
+        else{
+            throw new Exception("Reject parseIf");
+        }
     }
 
-    private void parseWhile() {
+    private void parseWhile() throws Exception {
+        // if accept 'while'
         expect(TokenType.OpeningParenthesis);
         parseExpression();
         expect(TokenType.ClosingParenthesis);
         parseBlock();
+
+        // else -> throw new Exception("Reject parseWhile");
     }
 
-    private void parseFor() {
+    private void parseFor() throws Exception {
+        // if accept 'for'
         expect(TokenType.OpeningParenthesis);
         parseAssignment();
         expect(TokenType.Semicolon);
@@ -91,6 +109,8 @@ public class ParserProject {
         parseExpression();
         expect(TokenType.ClosingParenthesis);
         parseBlock();
+
+        // else -> throw new Exception("Reject ParseFor")
     }
 
     private void parseAssignment() {
@@ -107,7 +127,7 @@ public class ParserProject {
         }
     }
 
-    private void parseBlock() {
+    private void parseBlock() throws Exception {
         expect(TokenType.OpeningCurlyBracket);
         parseStatements();
         expect(TokenType.ClosingCurlyBracket);

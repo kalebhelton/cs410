@@ -1,6 +1,7 @@
 /*
  * Authors: Sierra Jackson, Kaleb Helton, Simon Hale, Luke Graham
- * Reviewers: Emily Krugman, Taylor Oxley*/
+ * Reviewers: Emily Krugman, Taylor Oxley
+ */
 
 
 import java.io.File;
