@@ -1,8 +1,6 @@
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
-import java.io.FileNotFoundException;
-import java.rmi.server.Operation;
 
 public class ParserProject {
     private final Iterator<ScannerProject.Token> tokens;  // Iterator for Token Stream
@@ -105,13 +103,13 @@ public class ParserProject {
         expect(TokenType.Identifier);
         expect(TokenType.Assign);
         parseExpression();
-        atom.add(new AtomOperations(Operations.MOV, currentToken.getValue(), null, "result", null , null));
+        atom.add(new AtomOperations(Operation.MOV, currentToken.getValue(), null, "result", null , null));
         expect(TokenType.Semicolon);
     }
 
     private void parseExpression(){
         if (accept(TokenType.Identifier) || accept(TokenType.Integer) || accept(TokenType.Double)){
-            atom.add(new AtomOperations(Operations.ADD, "left", "right", "result", null, null));
+            atom.add(new AtomOperations(Operation.ADD, "left", "right", "result", null, null));
         }
     }
 
@@ -122,10 +120,3 @@ public class ParserProject {
     }
 }
 
-public static void main(String[] args) throws FileNotFoundException{
-    ScannerProject.initializeStates();
-    List<ScannerProject.Token> tokens = ScannerProject.tokenizeInput("input.txt");
-    ParserProject parser = new ParserProject(tokens);
-    List<AtomOperations> atom = parser.parse();
-    System.out.println("Atoms: " + atom);
-}

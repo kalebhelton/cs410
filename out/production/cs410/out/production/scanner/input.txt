@@ -1,0 +1,6 @@
+int hello = 2;
+
+
+
+
+double bye = 1.234;

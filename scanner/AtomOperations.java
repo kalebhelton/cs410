@@ -1,16 +1,4 @@
-public enum AtomOperations {
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    JMP,
-    NEG,
-    LBL,
-    TST,
-    MOV
-}
-
-public class AtomOperations{  // Individual Operations in Atom Form 
+public class AtomOperations{  // Individual Operations in Atom Form
     private final Operation op;
     private final String left;
     private final String right;
@@ -18,7 +6,7 @@ public class AtomOperations{  // Individual Operations in Atom Form
     private final String cmp;
     private final String dest;
 
-    public AtomOperations(Operation op, String left, String right, String results, String cmp, String dest){
+    public AtomOperations(Operation op, String left, String right, String result, String cmp, String dest){
         this.op = op;
         this.left = left;
         this.right = right;
