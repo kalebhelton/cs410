@@ -3,4 +3,7 @@ int hello = 2;
 
 
 
-double bye = 1.234;
+
+
+
+int bye = 1;
