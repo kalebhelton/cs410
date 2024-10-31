@@ -1,6 +1,6 @@
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
 
 public class ParserProject {
     private final Iterator<ScannerProject.Token> tokens;  // Iterator for Token Stream
@@ -57,7 +57,7 @@ public class ParserProject {
             parseWhile();
         } else if (accept(TokenType.KeywordFor)) {
             parseFor();
-        } else if (accept(TokenType.Integer) || accept(TokenType.Double)) {
+        } else if (accept(TokenType.KeywordInt) || accept(TokenType.KeywordDouble)) {
             parseAssignment();
         } else {
             throw new RuntimeException("Unexpected Token: " + currentToken);
@@ -102,7 +102,7 @@ public class ParserProject {
     }
 
     private void parseExpression() {
-        if (accept(TokenType.Identifier) || accept(TokenType.Integer) || accept(TokenType.Double)) {
+        if (accept(TokenType.Identifier) || accept(TokenType.KeywordInt) || accept(TokenType.KeywordDouble)) {
             atom.add(new AtomOperations(Operation.ADD, "left", "right", "result", null, null));
         }
     }
