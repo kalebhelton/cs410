@@ -9,6 +9,47 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+
+enum Operation {
+    ADD, SUB, MUL, DIV, JMP, NEG, LBL, TST, MOV
+}
+
+
+class AtomOperation {
+    private Operation operation;
+    private String left;
+    private String right;
+    private String result;
+    private String cmp;
+    private String source;
+    private String dest;
+
+    public AtomOperation(Operation operation, String left, String right, String result, String cmp, String source, String dest) {
+        this.operation = operation;
+        this.left = left;
+        this.right = right;
+        this.result = result;
+        this.cmp = cmp;
+        this.source = source;
+        this.dest = dest;
+    }
+
+    @Override
+    public String toString() {
+       
+        return "AtomOperation{" +
+                "operation=" + operation +
+                ", left='" + left + '\'' +
+                ", right='" + right + '\'' +
+                ", result='" + result + '\'' +
+                ", cmp='" + cmp + '\'' +
+                ", source='" + source + '\'' +
+                ", dest='" + dest + '\'' +
+                '}';
+    }
+}
+
+
 public class ParserProject {
     private final LinkedList<Token> tokens;
     private final List<AtomOperation> atoms = new ArrayList<>();  // List to Store Generated Atoms
