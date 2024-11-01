@@ -1,11 +1,11 @@
 public class AtomOperation {  // Individual Operations in Atom Form
     private final Operation op;
-    private final String left;
+    String left;
     private final String right;
     private final String result;
     private final String cmp;
-    private final String source;
-    private final String dest;
+     String source;
+     String dest;
 
     public AtomOperation(Operation op, String left, String right, String result, String cmp, String source, String dest){
         this.op = op;
