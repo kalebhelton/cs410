@@ -1,2 +1,9 @@
-int hello = 2;
-double test = 3.2;
+if(x == y) {
+    x++;
+} else if(x == z) {
+    y++;
+} else if(y == z) {
+    z++;
+} else {
+    x = z;
+}

@@ -3,26 +3,35 @@
  * Reviewers: Emily Krugman, Taylor Oxley, Luke Graham
  */
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ParserProject {
-    private final Iterator<Token> tokens;  // Iterator for Token Stream
-    private Token currentToken;  // Current Token being Processed
+    private final LinkedList<Token> tokens;
     private final List<AtomOperation> atoms = new ArrayList<>();  // List to Store Generated Atoms
 
+    private Token currentToken;  // Current Token being Processed
+    private Operation operation;
+    private String left;
+    private String right;
+    private String result;
+    private String cmp;
+    private String source;
+    private String dest;
+
     public ParserProject(List<Token> tokens) {
-        this.tokens = tokens.iterator();
+        this.tokens = new LinkedList<>(tokens);
         advance();
     }
 
     private void advance() {  // Advances to Next Token in Input Stream
-        if (tokens.hasNext()) {
-            currentToken = tokens.next();
+        if(!tokens.isEmpty()) {
+            currentToken = tokens.pop();
         } else {
-            currentToken = null;  // End of Tokens
+            currentToken = null;
         }
     }
 
@@ -36,169 +45,210 @@ public class ParserProject {
     }
 
     private void reject(TokenType... expectedTypes) {
-        if (expectedTypes.length == 0) throw new RuntimeException("Unexpected token: %s".formatted(currentToken));
-        if (expectedTypes.length == 1) throw new RuntimeException("Expected " + expectedTypes[0] + " but found " + currentToken);
+        if (expectedTypes.length == 0) throw new RuntimeException("Unexpected token: %s".formatted(currentToken.toString()));
+        if (expectedTypes.length == 1) throw new RuntimeException("Expected " + expectedTypes[0] + " but found " + currentToken.toString());
 
-        throw new RuntimeException("Expected one of %s but found %s".formatted(String.join(", ", Arrays.stream(expectedTypes).map(Enum::toString).toArray(String[]::new)), currentToken));
+        throw new RuntimeException("Expected one of %s but found %s".formatted(String.join(", ", Arrays.stream(expectedTypes).map(Enum::toString).toArray(String[]::new)), currentToken.toString()));
     }
 
-    private void expect(TokenType type) {  //  If Token Doesn't Match Expected Type -> Throws Error
+    private boolean expect(TokenType type) {  //  If Token Doesn't Match Expected Type -> Throws Error
         if (!accept(type)) reject(type);
+
+        return true;
     }
 
     private boolean peek(TokenType type) {
         return currentToken != null && currentToken.type() == type;
     }
 
-    public List<AtomOperation> parse() throws Exception {  // Start Parsing -> Returns List of Generated Atoms
-        parseStatements();
-//        parseBlock();
+    public List<AtomOperation> parse() {  // Start Parsing -> Returns List of Generated Atoms
+        statements();
+
+        if(currentToken != null) {
+            reject();
+        }
+
         return atoms;
     }
 
-    private void parseStatements() throws Exception {  // Parses a Sequence of Statements
-        while (currentToken != null) {
-            parseStatement();
-        }
+    private boolean block() {
+         return expect(TokenType.OPENING_CURLY_BRACKET) && statements() && expect(TokenType.CLOSING_CURLY_BRACKET);
     }
 
-    private void parseStatement() throws Exception {  // Parses a Single Statement Based on Current Token Type
-        if (peek(TokenType.KEYWORD_IF)) {
-            parseIf();
-        } else if (peek(TokenType.KEYWORD_WHILE)) {
-            parseWhile();
-        } else if (accept(TokenType.KEYWORD_FOR)) {
-            parseFor();
-        } else if (accept(TokenType.KEYWORD_INT) || accept(TokenType.KEYWORD_DOUBLE) || peek(TokenType.IDENTIFIER)) {
-            parseAssignment();
-        } else if (peek(TokenType.INTEGER) || peek(TokenType.DOUBLE) || peek(TokenType.OPENING_PARENTHESIS)) {
-            parseExpression();
-            expect(TokenType.SEMICOLON);
-        } else {
-            reject();
-        }
-    }
-
-    // else if ??
-    private void parseIf() throws Exception {
-        if (accept(TokenType.KEYWORD_IF)) {
-            expect(TokenType.OPENING_PARENTHESIS);
-            parseExpression();
-            expect(TokenType.CLOSING_PARENTHESIS);
-
-            if (accept(TokenType.KEYWORD_ELSE)) {
-                parseBlock();
-            }
-        } else {
-            throw new Exception("Reject If");
-        }
-    }
-
-    private void parseElse() throws Exception {
-        if (accept(TokenType.KEYWORD_ELSE)) {
-            if (peek(TokenType.KEYWORD_IF)) {
-                parseIf();
-            } else {
-                parseBlock();
-            }
-        } else {
-            throw new Exception("Reject Else");
-        }
-    }
-
-    private void parseWhile() throws Exception {
-        if (accept(TokenType.KEYWORD_WHILE)) {
-            expect(TokenType.OPENING_PARENTHESIS);
-            parseExpression();
-            expect(TokenType.CLOSING_PARENTHESIS);
-            parseBlock();
-        } else {
-            // reject
-            throw new Exception("Reject While");
-        }
-    }
-
-    private void parseFor() throws Exception {
-        if (accept(TokenType.KEYWORD_FOR)) {
-            expect(TokenType.OPENING_PARENTHESIS);
-            parseAssignment();
-            expect(TokenType.SEMICOLON);
-            parseExpression();
-            expect(TokenType.SEMICOLON);
-            parseExpression();
-            expect(TokenType.CLOSING_PARENTHESIS);
-            parseBlock();
-        } else {
-            // reject
-            throw new Exception("Reject For");
-        }
-    }
-
-    private void parseType() {
-        if (accept(TokenType.KEYWORD_DOUBLE)) {
-            return;
-        }
-    }
-
-    private void parseAssignment() {
-        Token identifier = currentToken;
-
-        expect(TokenType.IDENTIFIER);
-        expect(TokenType.ASSIGN);
-
-        Token factor = currentToken;
-        if(accept(TokenType.INTEGER) || accept(TokenType.DOUBLE)) {
-            atoms.add(new AtomOperation(factor.value(), identifier.value()));
-        } else {
-            parseExpression();
-            atoms.add(new AtomOperation(currentToken.value(), identifier.value()));
+    private boolean statements() {  // Parses a Sequence of Statements
+        if(statement() && currentToken != null) {
+            statements();
         }
 
-        expect(TokenType.SEMICOLON);
+        return true;
     }
 
-    private void parseExpression() {
-//        if (accept(TokenType.Identifier) || accept(TokenType.KeywordInt) || accept(TokenType.KeywordDouble)) {
-//            atom.add(new AtomOperations(Operation.ADD, "left", "right", "result", null, null));
+    private boolean statement() {  // Parses a Single Statement Based on Current Token Type
+        return ifStatement() || whileLoop() || forLoop() || (type() && assignment()) || assignment();
+
+//        if (peek(TokenType.KEYWORD_IF)) {
+//            parseIf();
+//            return true;
+//        } else if (peek(TokenType.KEYWORD_WHILE)) {
+//            parseWhile();
+//            return true;
+//        } else if (accept(TokenType.KEYWORD_FOR)) {
+//            parseFor();
+//            return true;
+//        } else if ((type() && assignment()) || assignment()) {
+//            return true;
+//        } else if (peek(TokenType.INTEGER) || peek(TokenType.DOUBLE) || peek(TokenType.OPENING_PARENTHESIS)) {
+//            expression();
+//            expect(TokenType.SEMICOLON);
+//            return true;
 //        }
-        if (accept(TokenType.OPENING_PARENTHESIS)) {
-            parseExpression();
-            expect(TokenType.CLOSING_PARENTHESIS);
-        } else if (accept(TokenType.IDENTIFIER)) {
-            if (peek(TokenType.INCREMENT) || peek(TokenType.DECREMENT)) {
-                parseUnaryMath();
-            } else if (peek(TokenType.ADD) || peek(TokenType.SUBTRACT) || peek(TokenType.MULTIPLY) || peek(TokenType.DIVIDE)) {
-                parseMath();
-            }
-        } else if (accept(TokenType.KEYWORD_INT) || accept(TokenType.KEYWORD_DOUBLE)) {
-            if(peek(TokenType.IDENTIFIER)) {
-                parseExpression();
-            } else {
-                reject(TokenType.IDENTIFIER);
-            }
-        }
+
+//        return false;
     }
 
-    private void parseUnaryMath() {
+    private boolean forLoop() {
+//        if (accept(TokenType.KEYWORD_FOR)) {
+//            expect(TokenType.OPENING_PARENTHESIS);
+//            assignment();
+//            expect(TokenType.SEMICOLON);
+//            expression();
+//            expect(TokenType.SEMICOLON);
+//            expression();
+//            expect(TokenType.CLOSING_PARENTHESIS);
+//            block();
+//        } else {
+//            // reject
+//            throw new Exception("Reject For");
+//        }
+
+        return false;
+    }
+
+    private boolean whileLoop() {
+//        if (accept(TokenType.KEYWORD_WHILE)) {
+//            expect(TokenType.OPENING_PARENTHESIS);
+//            expression();
+//            expect(TokenType.CLOSING_PARENTHESIS);
+//            block();
+//        } else {
+//            // reject
+//            throw new Exception("Reject While");
+//        }
+
+        return false;
+    }
+
+    private boolean ifStatement() {
+        boolean ifIsValid = accept(TokenType.KEYWORD_IF) && expect(TokenType.OPENING_PARENTHESIS) && comparison() && expect(TokenType.CLOSING_PARENTHESIS) && block();
+
+        return ifIsValid && elseStatement() || ifIsValid;
+    }
+
+    private boolean elseStatement() {
+        return accept(TokenType.KEYWORD_ELSE) && (ifStatement() || block());
+    }
+
+    private boolean assignment() {
+        result = currentToken.value();
+
+        return accept(TokenType.IDENTIFIER) && (opUnaryMath() || expect(TokenType.ASSIGN) && expression()) && expect(TokenType.SEMICOLON);
+    }
+
+    private boolean expression() {
+        left = currentToken.value();
+
+        if(factor()) {
+            if(peek(TokenType.SEMICOLON)) {
+                operation = Operation.MOV;
+                source = left;
+                dest = result;
+                left = null;
+                result = null;
+
+                createAtom();
+            }
+
+            return peek(TokenType.SEMICOLON) || opMath() && factor();
+        } else if (accept(TokenType.OPENING_PARENTHESIS)) {
+            return expression() && expect(TokenType.CLOSING_PARENTHESIS);
+        }
+
+        return false;
+    }
+
+    private boolean comparison() {
+        return factor() && opComparison() && factor();
+    }
+
+    private boolean type() {
+        return accept(TokenType.KEYWORD_INT) || accept(TokenType.KEYWORD_DOUBLE);
+    }
+
+    private boolean factor() {
+        return accept(TokenType.INTEGER) || accept(TokenType.DOUBLE) || accept(TokenType.IDENTIFIER);
+    }
+
+    private boolean opUnaryMath() {
         if (accept(TokenType.INCREMENT)) {
-            atoms.add(new AtomOperation(Operation.ADD, currentToken.value(), "1", currentToken.value()));
+            operation = Operation.ADD;
+            left = result;
+            right = "1";
+
+            return createAtom();
         } else if (accept(TokenType.DECREMENT)) {
-            atoms.add(new AtomOperation(Operation.SUB, currentToken.value(), "1", currentToken.value()));
-        } else {
-            reject(TokenType.INCREMENT, TokenType.DECREMENT);
+            operation = Operation.SUB;
+            left = result;
+            right = "1";
+
+            return createAtom();
         }
+
+        return false;
     }
 
-    private void parseMath() {
+    private boolean opMath() {
         if(accept(TokenType.ADD)) {
+            operation = Operation.ADD;
+            right = currentToken.value();
 
+            return createAtom();
+        } else if(accept(TokenType.SUBTRACT)) {
+            operation = Operation.SUB;
+            right = currentToken.value();
+
+            return createAtom();
+        } else if(accept(TokenType.MULTIPLY)) {
+            operation = Operation.MUL;
+            right = currentToken.value();
+
+            return createAtom();
+        } else if(accept(TokenType.DIVIDE)) {
+            operation = Operation.DIV;
+            right = currentToken.value();
+
+            return createAtom();
         }
+
+        return false;
     }
 
-    private void parseBlock() throws Exception {
-        expect(TokenType.OPENING_CURLY_BRACKET);
-        parseStatements();
-        expect(TokenType.CLOSING_CURLY_BRACKET);
+    private boolean opComparison() {
+        return accept(TokenType.EQUAL) || accept(TokenType.NOT_EQUAL) || accept(TokenType.LESS_THAN) || accept(TokenType.LESS_THAN_OR_EQUAL) || accept(TokenType.GREATER_THAN) || accept(TokenType.GREATER_THAN_OR_EQUAL);
+    }
+
+    private boolean createAtom() {
+        atoms.add(new AtomOperation(operation, left, right, result, cmp, source, dest));
+
+        // Reset all atom values
+        operation = null;
+        left = null;
+        right = null;
+        result = null;
+        cmp = null;
+        source = null;
+        dest = null;
+
+        return true;
     }
 }
 
