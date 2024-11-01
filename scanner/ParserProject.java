@@ -72,7 +72,9 @@ public class ParserProject {
     }
 
     private boolean block() {
-         return expect(TokenType.OPENING_CURLY_BRACKET) && statements() && expect(TokenType.CLOSING_CURLY_BRACKET);
+         return expect(TokenType.OPENING_CURLY_BRACKET) &&
+                 statements() &&
+                 expect(TokenType.CLOSING_CURLY_BRACKET);
     }
 
     private boolean statements() {  // Parses a Sequence of Statements
@@ -84,62 +86,38 @@ public class ParserProject {
     }
 
     private boolean statement() {  // Parses a Single Statement Based on Current Token Type
-        return ifStatement() || whileLoop() || forLoop() || (type() && assignment()) || assignment();
-
-//        if (peek(TokenType.KEYWORD_IF)) {
-//            parseIf();
-//            return true;
-//        } else if (peek(TokenType.KEYWORD_WHILE)) {
-//            parseWhile();
-//            return true;
-//        } else if (accept(TokenType.KEYWORD_FOR)) {
-//            parseFor();
-//            return true;
-//        } else if ((type() && assignment()) || assignment()) {
-//            return true;
-//        } else if (peek(TokenType.INTEGER) || peek(TokenType.DOUBLE) || peek(TokenType.OPENING_PARENTHESIS)) {
-//            expression();
-//            expect(TokenType.SEMICOLON);
-//            return true;
-//        }
-
-//        return false;
+        return ifStatement() ||
+                whileLoop() ||
+                forLoop() ||
+                assignment() && expect(TokenType.SEMICOLON);
     }
 
     private boolean forLoop() {
-//        if (accept(TokenType.KEYWORD_FOR)) {
-//            expect(TokenType.OPENING_PARENTHESIS);
-//            assignment();
-//            expect(TokenType.SEMICOLON);
-//            expression();
-//            expect(TokenType.SEMICOLON);
-//            expression();
-//            expect(TokenType.CLOSING_PARENTHESIS);
-//            block();
-//        } else {
-//            // reject
-//            throw new Exception("Reject For");
-//        }
-
-        return false;
+        return accept(TokenType.KEYWORD_FOR) &&
+                expect(TokenType.OPENING_PARENTHESIS) &&
+                assignment() &&
+                expect(TokenType.SEMICOLON) &&
+                condition() &&
+                expect(TokenType.SEMICOLON) &&
+                assignment() &&
+                expect(TokenType.CLOSING_PARENTHESIS) &&
+                block();
     }
 
     private boolean whileLoop() {
-//        if (accept(TokenType.KEYWORD_WHILE)) {
-//            expect(TokenType.OPENING_PARENTHESIS);
-//            expression();
-//            expect(TokenType.CLOSING_PARENTHESIS);
-//            block();
-//        } else {
-//            // reject
-//            throw new Exception("Reject While");
-//        }
-
-        return false;
+        return accept(TokenType.KEYWORD_WHILE) &&
+                expect(TokenType.OPENING_PARENTHESIS) &&
+                condition() &&
+                expect(TokenType.CLOSING_PARENTHESIS) &&
+                block();
     }
 
     private boolean ifStatement() {
-        boolean ifIsValid = accept(TokenType.KEYWORD_IF) && expect(TokenType.OPENING_PARENTHESIS) && comparison() && expect(TokenType.CLOSING_PARENTHESIS) && block();
+        boolean ifIsValid = accept(TokenType.KEYWORD_IF) &&
+                expect(TokenType.OPENING_PARENTHESIS) &&
+                condition() &&
+                expect(TokenType.CLOSING_PARENTHESIS) &&
+                block();
 
         return ifIsValid && elseStatement() || ifIsValid;
     }
@@ -151,7 +129,11 @@ public class ParserProject {
     private boolean assignment() {
         result = currentToken.value();
 
-        return accept(TokenType.IDENTIFIER) && (opUnaryMath() || expect(TokenType.ASSIGN) && expression()) && expect(TokenType.SEMICOLON);
+        // Read type if it is there
+        type();
+
+        return accept(TokenType.IDENTIFIER) &&
+                (opUnaryMath() || expect(TokenType.ASSIGN) && expression());
     }
 
     private boolean expression() {
@@ -176,7 +158,7 @@ public class ParserProject {
         return false;
     }
 
-    private boolean comparison() {
+    private boolean condition() {
         return factor() && opComparison() && factor();
     }
 

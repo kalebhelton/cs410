@@ -1,9 +1,2 @@
-if(x == y) {
+while(i < 3) {}
     x++;
-} else if(x == z) {
-    y++;
-} else if(y == z) {
-    z++;
-} else {
-    x = z;
-}
