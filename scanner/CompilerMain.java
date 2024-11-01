@@ -1,12 +1,16 @@
-import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.List;
 
 public class CompilerMain {
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws Exception {
         ScannerProject.initializeStates();
-        List<ScannerProject.Token> tokens = ScannerProject.tokenizeInput("input.txt");
+        List<Token> tokens = ScannerProject.tokenizeInput("input.txt");
         ParserProject parser = new ParserProject(tokens);
-        List<AtomOperations> atom = parser.parse();
-        System.out.println("Atoms: " + atom);
+        List<AtomOperation> atoms = parser.parse();
+
+        System.out.printf(
+                "Atoms:\n%s\n",
+                String.join("\n", atoms.stream().map(AtomOperation::toString).toArray(String[]::new))
+        );
     }
 }

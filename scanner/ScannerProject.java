@@ -18,28 +18,28 @@ public class ScannerProject {
     private static final int[][] FSM = new int[STATES][INPUTS];
 
 	public static void initializeStates() {
-        ACCEPT[1] = TokenType.Identifier;
-        ACCEPT[2] = TokenType.Semicolon;
-        ACCEPT[4] = TokenType.NotEqual;
-        ACCEPT[5] = TokenType.Assign;
-        ACCEPT[6] = TokenType.Equal;
-        ACCEPT[7] = TokenType.LessThan;
-        ACCEPT[8] = TokenType.LessThanOrEqual;
-        ACCEPT[9] = TokenType.GreaterThan;
-        ACCEPT[10] = TokenType.GreaterThanOrEqual;
-        ACCEPT[11] = TokenType.Add;
-        ACCEPT[12] = TokenType.Increment;
-        ACCEPT[13] = TokenType.Subtract;
-        ACCEPT[14] = TokenType.Decrement;
-        ACCEPT[15] = TokenType.Multiply;
-        ACCEPT[16] = TokenType.Divide;
-        ACCEPT[17] = TokenType.Integer;
-        ACCEPT[18] = TokenType.ClosingParenthesis;
-        ACCEPT[19] = TokenType.OpeningParenthesis;
-        ACCEPT[20] = TokenType.ClosingCurlyBracket;
-        ACCEPT[21] = TokenType.OpeningCurlyBracket;
-        ACCEPT[44] = TokenType.Double;
-        ACCEPT[45] = TokenType.Double;
+        ACCEPT[1] = TokenType.IDENTIFIER;
+        ACCEPT[2] = TokenType.SEMICOLON;
+        ACCEPT[4] = TokenType.NOT_EQUAL;
+        ACCEPT[5] = TokenType.ASSIGN;
+        ACCEPT[6] = TokenType.EQUAL;
+        ACCEPT[7] = TokenType.LESS_THAN;
+        ACCEPT[8] = TokenType.LESS_THAN_OR_EQUAL;
+        ACCEPT[9] = TokenType.GREATER_THAN;
+        ACCEPT[10] = TokenType.GREATER_THAN_OR_EQUAL;
+        ACCEPT[11] = TokenType.ADD;
+        ACCEPT[12] = TokenType.INCREMENT;
+        ACCEPT[13] = TokenType.SUBTRACT;
+        ACCEPT[14] = TokenType.DECREMENT;
+        ACCEPT[15] = TokenType.MULTIPLY;
+        ACCEPT[16] = TokenType.DIVIDE;
+        ACCEPT[17] = TokenType.INTEGER;
+        ACCEPT[18] = TokenType.CLOSING_PARENTHESIS;
+        ACCEPT[19] = TokenType.OPENING_PARENTHESIS;
+        ACCEPT[20] = TokenType.CLOSING_CURLY_BRACKET;
+        ACCEPT[21] = TokenType.OPENING_CURLY_BRACKET;
+        ACCEPT[44] = TokenType.DOUBLE;
+        ACCEPT[45] = TokenType.DOUBLE;
 
         // handle variables
         setStateValues(0, 'a', 'z', 1);
@@ -54,12 +54,12 @@ public class ScannerProject {
         setStateValues(44, '0', '9', 44);
 
         // handle keywords
-        addKeyword("for", TokenType.KeywordFor, new int[]{22, 23, 24});
-        addKeyword("if", TokenType.KeywordIf, new int[]{25, 26});
-        addKeyword("int", TokenType.KeywordInt, new int[]{25, 27, 28});
-        addKeyword("while", TokenType.KeywordWhile, new int[]{29, 30, 31, 32, 33});
-        addKeyword("else", TokenType.KeywordElse, new int[]{34, 35, 36, 37});
-        addKeyword("double", TokenType.KeywordDouble, new int[]{38, 39, 40, 41, 42, 43});
+        addKeyword("for", TokenType.KEYWORD_FOR, new int[]{22, 23, 24});
+        addKeyword("if", TokenType.KEYWORD_IF, new int[]{25, 26});
+        addKeyword("int", TokenType.KEYWORD_INT, new int[]{25, 27, 28});
+        addKeyword("while", TokenType.KEYWORD_WHILE, new int[]{29, 30, 31, 32, 33});
+        addKeyword("else", TokenType.KEYWORD_ELSE, new int[]{34, 35, 36, 37});
+        addKeyword("double", TokenType.KEYWORD_DOUBLE, new int[]{38, 39, 40, 41, 42, 43});
 
         FSM[0][';'] = 2;
 
@@ -108,36 +108,12 @@ public class ScannerProject {
             setStateValues(states[i], 'A', 'Z', 1);
 
             FSM[states[i]][keyword.charAt(i + 1)] = states[i + 1];
-            ACCEPT[states[i]] = TokenType.Identifier;
+            ACCEPT[states[i]] = TokenType.IDENTIFIER;
         }
 
         setStateValues(states[states.length - 1], 'a', 'z', 1);
         setStateValues(states[states.length - 1], 'A', 'Z', 1);
         ACCEPT[states[states.length - 1]] = type;
-    }
-
-    public static class Token {
-        private final TokenType type;
-        private final String value;
-    
-        public Token(TokenType type, String value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        //controls the output!!
-        public String toString() {
-            return value + " (" + type + ")";
-        }
-
-        //easy get methods
-        public TokenType getType() {
-            return type;
-        }
-    
-        public String getValue() {
-            return value;
-        }
     }
 
     public static List<Token> tokenizeInput(String filename) throws FileNotFoundException {
