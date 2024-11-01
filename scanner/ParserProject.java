@@ -167,25 +167,7 @@ public class ParserProject {
     }
 
     private boolean factor() {
-        return accept(TokenType.INTEGER) || accept(TokenType.DOUBLE) || accept(TokenType.IDENTIFIER);
-    }
-
-    private boolean opUnaryMath() {
-        if (accept(TokenType.INCREMENT)) {
-            operation = Operation.ADD;
-            left = result;
-            right = "1";
-
-            return createAtom();
-        } else if (accept(TokenType.DECREMENT)) {
-            operation = Operation.SUB;
-            left = result;
-            right = "1";
-
-            return createAtom();
-        }
-
-        return false;
+        return opNegate() || accept(TokenType.INTEGER) || accept(TokenType.DOUBLE) || accept(TokenType.IDENTIFIER);
     }
 
     private boolean opMath() {
@@ -209,6 +191,35 @@ public class ParserProject {
             right = currentToken.value();
 
             return createAtom();
+        }
+
+        return false;
+    }
+
+    private boolean opUnaryMath() {
+        if (accept(TokenType.INCREMENT)) {
+            operation = Operation.ADD;
+            left = result;
+            right = "1";
+
+            return createAtom();
+        } else if (accept(TokenType.DECREMENT)) {
+            operation = Operation.SUB;
+            left = result;
+            right = "1";
+
+            return createAtom();
+        }
+
+        return false;
+    }
+
+    private boolean opNegate() {
+        if(accept(TokenType.SUBTRACT)) {
+            operation = Operation.NEG;
+            left = currentToken.value();
+
+            return factor() && createAtom();
         }
 
         return false;
