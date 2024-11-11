@@ -97,17 +97,46 @@ public class ParserProject {
                 assignment() && expect(TokenType.SEMICOLON);
     }
 
+    // Helper method to generate new labels for atoms
+private String generateNewLabel(String baseName) {
+    return baseName + "_" + atoms.size();
+}
+
     private boolean forLoop() {
-        return accept(TokenType.KEYWORD_FOR) &&
-                expect(TokenType.OPENING_PARENTHESIS) &&
-                assignment() &&
-                expect(TokenType.SEMICOLON) &&
-                condition() &&
-                expect(TokenType.SEMICOLON) &&
-                assignment() &&
-                expect(TokenType.CLOSING_PARENTHESIS) &&
-                block();
+        if (accept(TokenType.KEYWORD_FOR) &&
+                expect(TokenType.OPENING_PARENTHESIS)) {
+            assignment();  //Initialization
+            expect(TokenType.SEMICOLON);
+    
+            
+            String topLabel = generateNewLabel("top");
+            atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, topLabel));
+    
+            // Condition check 
+            if (condition()) {
+                AtomOperation conditionAtom = atomStack.peek();
+                conditionAtom.cmp = "5"; 
+                conditionAtom.dest = generateNewLabel("after_for"); // Label for jumping out of loop if condition fails
+                endAtom();
+    
+                expect(TokenType.SEMICOLON);
+    
+                // Increment 
+                assignment();
+                expect(TokenType.CLOSING_PARENTHESIS);
+    
+                // Jump back to the start of the loop (top)
+                atoms.add(new AtomOperation(Operation.JMP, null, null, null, null, null, topLabel));
+    
+                // End of the loop (after_for label)
+                atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, conditionAtom.dest));
+    
+                return block();
+            }
+        }
+        return false;
     }
+    
 
     private boolean whileLoop() {
         return accept(TokenType.KEYWORD_WHILE) &&
@@ -121,11 +150,24 @@ public class ParserProject {
         boolean ifIsValid = accept(TokenType.KEYWORD_IF) &&
                 expect(TokenType.OPENING_PARENTHESIS) &&
                 condition() &&
-                expect(TokenType.CLOSING_PARENTHESIS) &&
-                block();
-
+                expect(TokenType.CLOSING_PARENTHESIS);
+    
+       
+        String afterIfLabel = generateNewLabel("after_if");
+        AtomOperation conditionAtom = atomStack.peek();
+        conditionAtom.cmp = "5"; 
+        conditionAtom.dest = afterIfLabel;
+        endAtom();
+    
+       
+        ifIsValid = ifIsValid && block();
+    
+        
+        atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, afterIfLabel));
+    
         return ifIsValid && elseStatement() || ifIsValid;
     }
+    
 
     private boolean elseStatement() {
         return accept(TokenType.KEYWORD_ELSE) && (ifStatement() || block());
@@ -181,14 +223,13 @@ public class ParserProject {
         return false;
     }
 
-    private boolean condition() {  // TST is Wrong 
+    private boolean condition() {
         if (factor() && opComparison() && factor()) {
             beginAtom(Operation.TST);
             AtomOperation atom = atomStack.peek();
             atom.left = left;
             atom.right = right;
-            atom.cmp = cmp;
-            atom.dest = result;
+            atom.cmp = cmp; 
             endAtom();
             return true;
         }
@@ -320,4 +361,6 @@ public class ParserProject {
 
         return true;
     }
+
+    
 }
