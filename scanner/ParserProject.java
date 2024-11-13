@@ -108,7 +108,6 @@ public class ParserProject {
             // Condition check 
             if (condition()) {
                 AtomOperation conditionAtom = atomStack.peek();
-                endAtom();
 
                 expect(TokenType.SEMICOLON);
 
@@ -152,7 +151,7 @@ public class ParserProject {
     }
 
     private boolean assignment() {
-        type(); // Check Type
+        type();
 
         atomStack.push(new AtomOperation(null, null, null, currentToken.value(), null, null, null));
 
@@ -188,18 +187,26 @@ public class ParserProject {
     }
 
     private boolean factor() {
-        return accept(TokenType.IDENTIFIER) ||
-                opNegate() ||
+        Token factorToken = currentToken;
+        AtomOperation atom = atomStack.peek();
+
+        if(accept(TokenType.IDENTIFIER)) {
+            if(peek(TokenType.SEMICOLON)) {
+                atom.setOp(Operation.MOV);
+                atom.setSource(factorToken.value());
+                atom.setDest(atom.getResult());
+                atom.setResult(null);
+
+                return atoms.add(atomStack.pop());
+            }
+
+            atom.setLeft(factorToken.value());
+        }
+
+        return accept(TokenType.SUBTRACT) && accept(TokenType.INTEGER) ||
                 accept(TokenType.INTEGER) ||
+                accept(TokenType.SUBTRACT) || accept(TokenType.DOUBLE) ||
                 accept(TokenType.DOUBLE);
-    }
-
-    private AtomOperation beginAtom(Operation op) {
-        return atomStack.push(new AtomOperation(op, null, null, null, null, null, null));
-    }
-
-    private void endAtom() {
-        atoms.add(atomStack.pop());
     }
 
     private boolean opMath() {  // Outputs Correctly
