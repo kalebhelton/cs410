@@ -90,37 +90,33 @@ public class ParserProject {
                 assignment() && expect(TokenType.SEMICOLON);
     }
 
-    // Helper method to generate new labels for atoms
-    private String generateNewLabel(String baseName) {
-        return baseName + "_" + atoms.size();
-    }
-
     private boolean forLoop() {
-        if (accept(TokenType.KEYWORD_FOR) &&
-                expect(TokenType.OPENING_PARENTHESIS)) {
-            assignment();  //Initialization
+        if (accept(TokenType.KEYWORD_FOR) && expect(TokenType.OPENING_PARENTHESIS)) {
+            assignment();
             expect(TokenType.SEMICOLON);
+            AtomOperation beforeLabel = generateLabel("before_for");
+            AtomOperation afterLabel = generateLabel("after_for");
 
+            atoms.add(beforeLabel);
+            atomStack.push(new AtomOperation(Operation.TST));
+            atomStack.peek().setDest(afterLabel.getDest());
 
-            String topLabel = generateNewLabel("top");
-
-            // Condition check 
             if (condition()) {
-                AtomOperation conditionAtom = atomStack.peek();
-
                 expect(TokenType.SEMICOLON);
-
-                // Increment 
                 assignment();
+                AtomOperation assignment = atoms.removeLast();
                 expect(TokenType.CLOSING_PARENTHESIS);
 
-                // Jump back to the start of the loop (top)
+                boolean blockIsValid = block();
 
-                // End of the loop (after_for label)
+                atoms.add(assignment);
+                atoms.add(new AtomOperation(Operation.JMP, null, null, null, null, beforeLabel.getDest()));
+                atoms.add(afterLabel);
 
-                return block();
+                return blockIsValid;
             }
         }
+
         return false;
     }
 
@@ -151,7 +147,7 @@ public class ParserProject {
     private boolean assignment() {
         type();
 
-        atomStack.push(new AtomOperation(null, null, null, currentToken.value(), null));
+        atomStack.push(new AtomOperation(null, null, null, currentToken.value(), null, null));
 
         if (accept(TokenType.IDENTIFIER)) {
             if (opUnaryMath()) {
@@ -174,10 +170,13 @@ public class ParserProject {
     }
 
     private boolean condition() {
-        if (factor() && opComparison() && factor()) {
-            return true;
+        AtomOperation atom = atomStack.peek();
+
+        if(!factor() || !opComparison()) {
+            return false;
         }
-        return false;
+
+        return factor();
     }
 
     private boolean type() {
@@ -289,12 +288,27 @@ public class ParserProject {
     }
 
     private boolean opComparison() {
-        return accept(TokenType.EQUAL) ||
-                accept(TokenType.NOT_EQUAL) ||
-                accept(TokenType.LESS_THAN) ||
-                accept(TokenType.LESS_THAN_OR_EQUAL) ||
-                accept(TokenType.GREATER_THAN) ||
-                accept(TokenType.GREATER_THAN_OR_EQUAL);
+        AtomOperation atom = atomStack.peek();
+
+        if(accept(TokenType.EQUAL)) {
+            atom.setCmp("6");
+        } else if(accept(TokenType.LESS_THAN)) {
+            atom.setCmp("5");
+        } else if(accept(TokenType.GREATER_THAN)) {
+            atom.setCmp("4");
+        } else if(accept(TokenType.LESS_THAN_OR_EQUAL)) {
+            atom.setCmp("3");
+        } else if(accept(TokenType.GREATER_THAN_OR_EQUAL)) {
+            atom.setCmp("2");
+        } else if(accept(TokenType.NOT_EQUAL)) {
+            atom.setCmp("1");
+        }
+
+        return atom.getCmp() != null;
+    }
+
+    private AtomOperation generateLabel(String baseName) {
+        return new AtomOperation(Operation.LBL, null, null , null, null, "%s_%d".formatted(baseName, atoms.size()));
     }
 
 }
