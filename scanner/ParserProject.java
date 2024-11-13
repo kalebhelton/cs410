@@ -135,7 +135,7 @@ public class ParserProject {
                 expect(TokenType.CLOSING_PARENTHESIS);
                 boolean blockIsValid = block();
 
-                atomQueue.offer(new AtomOperation(Operation.JMP, null, null, null, null, beforeLabel.getDest()));
+                atomQueue.offer(new AtomOperation(Operation.JMP, "", "", "", "", beforeLabel.getDest()));
                 atomQueue.offer(afterLabel);
 
                 return blockIsValid;
