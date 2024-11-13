@@ -140,9 +140,8 @@ public class ParserProject {
         boolean ifIsValid = accept(TokenType.KEYWORD_IF) &&
                 expect(TokenType.OPENING_PARENTHESIS) &&
                 condition() &&
-                expect(TokenType.CLOSING_PARENTHESIS);
-
-        ifIsValid = ifIsValid && block();
+                expect(TokenType.CLOSING_PARENTHESIS) &&
+                block();
 
         return ifIsValid && elseStatement() || ifIsValid;
     }
@@ -155,14 +154,14 @@ public class ParserProject {
     private boolean assignment() {
         type(); // Check Type
 
+        atomStack.push(new AtomOperation(null, null, null, currentToken.value(), null, null, null));
+
         if (accept(TokenType.IDENTIFIER)) {
-            if (opUnaryMath()) {  // Check Increment Option
-                return true;
-            } else if (opNegate()) {  // Check Decrement Option
+            if (opUnaryMath()) {
                 return true;
             }
 
-            return expect(TokenType.ASSIGN) && expression();  // Check Regular Assignment
+            return expect(TokenType.ASSIGN) && (expression() || opNegate());
         }
 
         return false;
@@ -189,10 +188,10 @@ public class ParserProject {
     }
 
     private boolean factor() {
-        return opNegate() ||
+        return accept(TokenType.IDENTIFIER) ||
+                opNegate() ||
                 accept(TokenType.INTEGER) ||
-                accept(TokenType.DOUBLE) ||
-                accept(TokenType.IDENTIFIER);
+                accept(TokenType.DOUBLE);
     }
 
     private AtomOperation beginAtom(Operation op) {
@@ -218,24 +217,34 @@ public class ParserProject {
     }
 
     private boolean opUnaryMath() {
+        AtomOperation atom = atomStack.peek();
+
         if (accept(TokenType.INCREMENT)) {
-            return atoms.add(new AtomOperation(Operation.ADD, "x", "1", "x", null, null, null));
+            atom.setOp(Operation.ADD);
+            atom.setRight("1");
+            atom.setLeft(atom.getResult());
+
+            return atoms.add(atomStack.pop());
         } else if (accept(TokenType.DECREMENT)) {
-            return atoms.add(new AtomOperation(Operation.SUB, "x", "1", "x", null, null, null));
+            atom.setOp(Operation.SUB);
+            atom.setRight("1");
+            atom.setLeft(atom.getResult());
+
+            return atoms.add(atomStack.pop());
         }
 
         return false;
     }
 
     private boolean opNegate() {
-        if (accept(TokenType.DECREMENT)) {
-            beginAtom(Operation.SUB);
+        if(accept(TokenType.SUBTRACT) && peek(TokenType.IDENTIFIER)) {
+            AtomOperation atom = atomStack.pop();
 
-            if (!atomStack.isEmpty()) {
-                return true;
-            } else {
-                return false;
-            }
+            atom.setOp(Operation.NEG);
+            atom.setLeft(currentToken.value());
+            accept(TokenType.IDENTIFIER);
+
+            return atoms.add(atom);
         }
 
         return false;
