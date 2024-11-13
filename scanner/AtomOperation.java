@@ -4,21 +4,17 @@ public class AtomOperation {  // Individual Operations in Atom Form
     private String right;
     private String result;
     private String cmp;
-    private String source;
-    private String dest;
 
     public AtomOperation(Operation op) {
-        this(op, null, null, null, null, null, null);
+        this(op, null, null, null, null);
     }
 
-    public AtomOperation(Operation op, String left, String right, String result, String cmp, String source, String dest){
+    public AtomOperation(Operation op, String left, String right, String result, String cmp) {
         this.op = op;
         this.left = left;
         this.right = right;
         this.result = result;
         this.cmp = cmp;
-        this.source = source;
-        this.dest = dest;
     }
 
     public Operation getOp() {
@@ -61,22 +57,6 @@ public class AtomOperation {  // Individual Operations in Atom Form
         this.cmp = cmp;
     }
 
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public String getDest() {
-        return dest;
-    }
-
-    public void setDest(String dest) {
-        this.dest = dest;
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(op.toString());
@@ -85,8 +65,6 @@ public class AtomOperation {  // Individual Operations in Atom Form
         if(right != null) sb.append(", ").append(right);
         if(result != null) sb.append(", ").append(result);
         if(cmp != null) sb.append(", ").append(cmp);
-        if(source != null) sb.append(", ").append(source);
-        if(dest != null) sb.append(", ").append(dest);
 
         return sb.toString();
     }

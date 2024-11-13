@@ -103,7 +103,6 @@ public class ParserProject {
 
 
             String topLabel = generateNewLabel("top");
-            atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, topLabel));
 
             // Condition check 
             if (condition()) {
@@ -116,7 +115,6 @@ public class ParserProject {
                 expect(TokenType.CLOSING_PARENTHESIS);
 
                 // Jump back to the start of the loop (top)
-                atoms.add(new AtomOperation(Operation.JMP, null, null, null, null, null, topLabel));
 
                 // End of the loop (after_for label)
 
@@ -153,14 +151,14 @@ public class ParserProject {
     private boolean assignment() {
         type();
 
-        atomStack.push(new AtomOperation(null, null, null, currentToken.value(), null, null, null));
+        atomStack.push(new AtomOperation(null, null, null, currentToken.value(), null));
 
         if (accept(TokenType.IDENTIFIER)) {
             if (opUnaryMath()) {
                 return true;
             }
 
-            return expect(TokenType.ASSIGN) && (expression() || opNegate());
+            return expect(TokenType.ASSIGN) && expression();
         }
 
         return false;
@@ -191,32 +189,65 @@ public class ParserProject {
         AtomOperation atom = atomStack.peek();
 
         if(accept(TokenType.IDENTIFIER)) {
-            if(peek(TokenType.SEMICOLON)) {
-                atom.setOp(Operation.MOV);
-                atom.setSource(factorToken.value());
-                atom.setDest(atom.getResult());
-                atom.setResult(null);
-
-                return atoms.add(atomStack.pop());
+            if(atom.getLeft() == null) {
+                atom.setLeft(factorToken.value());
+            } else {
+                atom.setRight(factorToken.value());
             }
 
-            atom.setLeft(factorToken.value());
+            if(peek(TokenType.SEMICOLON)) {
+                if(atom.getRight() == null) {
+                    atom.setOp(Operation.MOV);
+                }
+
+                atoms.add(atomStack.pop());
+            }
+
+            return true;
         }
 
-        return accept(TokenType.SUBTRACT) && accept(TokenType.INTEGER) ||
-                accept(TokenType.INTEGER) ||
-                accept(TokenType.SUBTRACT) || accept(TokenType.DOUBLE) ||
-                accept(TokenType.DOUBLE);
+        boolean isNegative = accept(TokenType.SUBTRACT);
+        factorToken = currentToken;
+
+        if(accept(TokenType.INTEGER) || accept(TokenType.DOUBLE)) {
+            String value = isNegative ? "-%s".formatted(factorToken.value()) : factorToken.value();
+
+            if(atom.getLeft() == null) {
+                atom.setLeft(value);
+            } else {
+                atom.setRight(value);
+            }
+
+            if(peek(TokenType.SEMICOLON)) {
+                if(atom.getRight() == null) {
+                    atom.setOp(Operation.MOV);
+                }
+
+                atoms.add(atomStack.pop());
+            }
+
+            return true;
+        }
+
+        return opNegate();
     }
 
     private boolean opMath() {  // Outputs Correctly
         if (accept(TokenType.ADD)) {
+            atomStack.peek().setOp(Operation.ADD);
+
             return true;
         } else if (accept(TokenType.SUBTRACT)) {
+            atomStack.peek().setOp(Operation.SUB);
+
             return true;
         } else if (accept(TokenType.MULTIPLY)) {
+            atomStack.peek().setOp(Operation.MUL);
+
             return true;
         } else if (accept(TokenType.DIVIDE)) {
+            atomStack.peek().setOp(Operation.DIV);
+
             return true;
         }
 
@@ -244,7 +275,7 @@ public class ParserProject {
     }
 
     private boolean opNegate() {
-        if(accept(TokenType.SUBTRACT) && peek(TokenType.IDENTIFIER)) {
+        if(peek(TokenType.IDENTIFIER)) {
             AtomOperation atom = atomStack.pop();
 
             atom.setOp(Operation.NEG);
