@@ -122,11 +122,27 @@ public class ParserProject {
 
 
     private boolean whileLoop() {
-        return accept(TokenType.KEYWORD_WHILE) &&
-                expect(TokenType.OPENING_PARENTHESIS) &&
-                condition() &&
-                expect(TokenType.CLOSING_PARENTHESIS) &&
-                block();
+        if(accept(TokenType.KEYWORD_WHILE) && expect(TokenType.OPENING_PARENTHESIS)) {
+            AtomOperation beforeLabel = generateLabel("before_while");
+            AtomOperation afterLabel = generateLabel("after_while");
+
+            atoms.add(beforeLabel);
+            atomStack.push(new AtomOperation(Operation.TST));
+            atomStack.peek().setDest(afterLabel.getDest());
+
+            if(condition()) {
+                atoms.add(atomStack.pop());
+                expect(TokenType.CLOSING_PARENTHESIS);
+                boolean blockIsValid = block();
+
+                atoms.add(new AtomOperation(Operation.JMP, null, null, null, null, beforeLabel.getDest()));
+                atoms.add(afterLabel);
+
+                return blockIsValid;
+            }
+        }
+
+        return false;
     }
 
     private boolean ifStatement() {
@@ -170,8 +186,6 @@ public class ParserProject {
     }
 
     private boolean condition() {
-        AtomOperation atom = atomStack.peek();
-
         if(!factor() || !opComparison()) {
             return false;
         }
