@@ -29,11 +29,9 @@ public class ParserProject {
     }
 
     private void advance() {  // Advances to Next Token in Input Stream
-        if(!tokens.isEmpty()) {
+        if (!tokens.isEmpty()) {
             currentToken = tokens.pop();
-        } 
-        
-        else {
+        } else {
             currentToken = null;
         }
     }
@@ -48,16 +46,18 @@ public class ParserProject {
     }
 
     private void reject(TokenType... expectedTypes) {
-        if (expectedTypes.length == 0) throw new RuntimeException("Unexpected token: %s".formatted(currentToken.toString()));
-        if (expectedTypes.length == 1) throw new RuntimeException("Expected " + expectedTypes[0] + " but found " + currentToken.toString());
+        if (expectedTypes.length == 0)
+            throw new RuntimeException("Unexpected token: %s".formatted(currentToken.toString()));
+        if (expectedTypes.length == 1)
+            throw new RuntimeException("Expected " + expectedTypes[0] + " but found " + currentToken.toString());
 
         throw new RuntimeException("Expected one of %s but found %s".formatted(String.join(", ", Arrays.stream(expectedTypes).map(Enum::toString).toArray(String[]::new)), currentToken.toString()));
     }
 
     private boolean expect(TokenType type) {  //  If Token Doesn't Match Expected Type -> Throws Error
-        if (!accept(type)){
+        if (!accept(type)) {
             reject(type);
-        } 
+        }
 
         return true;
     }
@@ -69,7 +69,7 @@ public class ParserProject {
     public List<AtomOperation> parse() {  // Start Parsing -> Returns List of Generated Atoms
         statements();
 
-        if(currentToken != null) {
+        if (currentToken != null) {
             reject();
         }
 
@@ -77,13 +77,13 @@ public class ParserProject {
     }
 
     private boolean block() {
-         return expect(TokenType.OPENING_CURLY_BRACKET) &&
-                 statements() &&
-                 expect(TokenType.CLOSING_CURLY_BRACKET);
+        return expect(TokenType.OPENING_CURLY_BRACKET) &&
+                statements() &&
+                expect(TokenType.CLOSING_CURLY_BRACKET);
     }
 
     private boolean statements() {  // Parses a Sequence of Statements
-        if(statement() && currentToken != null) {
+        if (statement() && currentToken != null) {
             statements();
         }
 
@@ -98,45 +98,45 @@ public class ParserProject {
     }
 
     // Helper method to generate new labels for atoms
-private String generateNewLabel(String baseName) {
-    return baseName + "_" + atoms.size();
-}
+    private String generateNewLabel(String baseName) {
+        return baseName + "_" + atoms.size();
+    }
 
     private boolean forLoop() {
         if (accept(TokenType.KEYWORD_FOR) &&
                 expect(TokenType.OPENING_PARENTHESIS)) {
             assignment();  //Initialization
             expect(TokenType.SEMICOLON);
-    
-            
+
+
             String topLabel = generateNewLabel("top");
             atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, topLabel));
-    
+
             // Condition check 
             if (condition()) {
                 AtomOperation conditionAtom = atomStack.peek();
-                conditionAtom.cmp = "5"; 
+                conditionAtom.cmp = "5";
                 conditionAtom.dest = generateNewLabel("after_for"); // Label for jumping out of loop if condition fails
                 endAtom();
-    
+
                 expect(TokenType.SEMICOLON);
-    
+
                 // Increment 
                 assignment();
                 expect(TokenType.CLOSING_PARENTHESIS);
-    
+
                 // Jump back to the start of the loop (top)
                 atoms.add(new AtomOperation(Operation.JMP, null, null, null, null, null, topLabel));
-    
+
                 // End of the loop (after_for label)
                 atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, conditionAtom.dest));
-    
+
                 return block();
             }
         }
         return false;
     }
-    
+
 
     private boolean whileLoop() {
         return accept(TokenType.KEYWORD_WHILE) &&
@@ -151,23 +151,23 @@ private String generateNewLabel(String baseName) {
                 expect(TokenType.OPENING_PARENTHESIS) &&
                 condition() &&
                 expect(TokenType.CLOSING_PARENTHESIS);
-    
-       
+
+
         String afterIfLabel = generateNewLabel("after_if");
         AtomOperation conditionAtom = atomStack.peek();
-        conditionAtom.cmp = "5"; 
+        conditionAtom.cmp = "5";
         conditionAtom.dest = afterIfLabel;
         endAtom();
-    
-       
+
+
         ifIsValid = ifIsValid && block();
-    
-        
+
+
         atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, afterIfLabel));
-    
+
         return ifIsValid && elseStatement() || ifIsValid;
     }
-    
+
 
     private boolean elseStatement() {
         return accept(TokenType.KEYWORD_ELSE) && (ifStatement() || block());
@@ -175,27 +175,32 @@ private String generateNewLabel(String baseName) {
 
     private String getComparisonCode(TokenType type) {
         switch (type) {
-            case EQUAL: return "0";
-            case NOT_EQUAL: return "6";
-            case LESS_THAN: return "2";
-            case GREATER_THAN: return "3";
-            case LESS_THAN_OR_EQUAL: return "4";
-            case GREATER_THAN_OR_EQUAL: return "5";
-            default: return "0"; // Default to 'always' as a fallback
+            case EQUAL:
+                return "0";
+            case NOT_EQUAL:
+                return "6";
+            case LESS_THAN:
+                return "2";
+            case GREATER_THAN:
+                return "3";
+            case LESS_THAN_OR_EQUAL:
+                return "4";
+            case GREATER_THAN_OR_EQUAL:
+                return "5";
+            default:
+                return "0"; // Default to 'always' as a fallback
         }
-}
+    }
 
     private boolean assignment() {
         result = currentToken.value();
 
         type(); // Check Type
 
-        if (accept(TokenType.IDENTIFIER)) { 
+        if (accept(TokenType.IDENTIFIER)) {
             if (opUnaryMath()) {  // Check Increment Option
                 return true;
-            }
-
-            else if(opNegate()){  // Check Decrement Option
+            } else if (opNegate()) {  // Check Decrement Option
                 return true;
             }
 
@@ -215,9 +220,7 @@ private String generateNewLabel(String baseName) {
                 endAtom();
             }
             return peek(TokenType.SEMICOLON) || opMath() && factor();
-        } 
-        
-        else if (accept(TokenType.OPENING_PARENTHESIS)) {
+        } else if (accept(TokenType.OPENING_PARENTHESIS)) {
             return expression() && expect(TokenType.CLOSING_PARENTHESIS);
         }
         return false;
@@ -229,7 +232,7 @@ private String generateNewLabel(String baseName) {
             AtomOperation atom = atomStack.peek();
             atom.left = left;
             atom.right = right;
-            atom.cmp = cmp; 
+            atom.cmp = cmp;
             endAtom();
             return true;
         }
@@ -241,9 +244,9 @@ private String generateNewLabel(String baseName) {
     }
 
     private boolean factor() {
-        return  opNegate()  ||
-                accept(TokenType.INTEGER) || 
-                accept(TokenType.DOUBLE) || 
+        return opNegate() ||
+                accept(TokenType.INTEGER) ||
+                accept(TokenType.DOUBLE) ||
                 accept(TokenType.IDENTIFIER);
     }
 
@@ -264,9 +267,7 @@ private String generateNewLabel(String baseName) {
             atom.source = currentToken.value();
             endAtom();
             return true;
-        } 
-        
-        else if (accept(TokenType.SUBTRACT)) {
+        } else if (accept(TokenType.SUBTRACT)) {
             beginAtom(Operation.SUB);
             AtomOperation atom = atomStack.peek();
             atom.left = left;
@@ -274,9 +275,7 @@ private String generateNewLabel(String baseName) {
             atom.dest = result;
             endAtom();
             return true;
-        } 
-        
-        else if (accept(TokenType.MULTIPLY)) {
+        } else if (accept(TokenType.MULTIPLY)) {
             beginAtom(Operation.MUL);
             AtomOperation atom = atomStack.peek();
             atom.left = left;
@@ -284,9 +283,7 @@ private String generateNewLabel(String baseName) {
             atom.dest = result;
             endAtom();
             return true;
-        } 
-        
-        else if (accept(TokenType.DIVIDE)) {
+        } else if (accept(TokenType.DIVIDE)) {
             beginAtom(Operation.DIV);
             AtomOperation atom = atomStack.peek();
             atom.left = left;
@@ -302,48 +299,46 @@ private String generateNewLabel(String baseName) {
         if (accept(TokenType.INCREMENT)) {
             beginAtom(Operation.ADD);
 
-                if (!atomStack.isEmpty()) {
-                    AtomOperation atom = atomStack.peek();
-                    atom.left = result;    // Variable being Incremented
-                    atom.right = "1";      // Increment by 1
-                    atom.dest = result;  // Result
-                    endAtom();
-                    return true;
-                } 
-                else {
-                    return false;
-                }
+            if (!atomStack.isEmpty()) {
+                AtomOperation atom = atomStack.peek();
+                atom.left = result;    // Variable being Incremented
+                atom.right = "1";      // Increment by 1
+                atom.dest = result;  // Result
+                endAtom();
+                return true;
+            } else {
+                return false;
+            }
         }
-    return false;
+        return false;
     }
 
     private boolean opNegate() {
         if (accept(TokenType.DECREMENT)) {
             beginAtom(Operation.SUB);
 
-                if (!atomStack.isEmpty()) {
-                    AtomOperation atom = atomStack.peek();
-                    atom.left = result;    // Variable Being Decremented
-                    atom.right = "1";      // Decrement by 1
-                    atom.dest = result;  // Result
-                    endAtom();
-                    return true;
-                } 
-                else {
-                    return false;
-                }
+            if (!atomStack.isEmpty()) {
+                AtomOperation atom = atomStack.peek();
+                atom.left = result;    // Variable Being Decremented
+                atom.right = "1";      // Decrement by 1
+                atom.dest = result;  // Result
+                endAtom();
+                return true;
+            } else {
+                return false;
+            }
         }
-    return false;
+        return false;
     }
 
     private boolean opComparison() {
-    return accept(TokenType.EQUAL) || 
-            accept(TokenType.NOT_EQUAL) ||
-            accept(TokenType.LESS_THAN) ||
-            accept(TokenType.LESS_THAN_OR_EQUAL) ||
-            accept(TokenType.GREATER_THAN) ||
-            accept(TokenType.GREATER_THAN_OR_EQUAL);
-}
+        return accept(TokenType.EQUAL) ||
+                accept(TokenType.NOT_EQUAL) ||
+                accept(TokenType.LESS_THAN) ||
+                accept(TokenType.LESS_THAN_OR_EQUAL) ||
+                accept(TokenType.GREATER_THAN) ||
+                accept(TokenType.GREATER_THAN_OR_EQUAL);
+    }
 
     private boolean createAtom() {
         atoms.add(new AtomOperation(operation, left, right, result, cmp, source, dest));
@@ -362,5 +357,5 @@ private String generateNewLabel(String baseName) {
         return true;
     }
 
-    
+
 }

@@ -1,9 +1,0 @@
-int hello = 2;
-
-
-
-
-
-
-
-int bye = 1;
