@@ -3,16 +3,13 @@
  * Reviewers: Emily Krugman, Taylor Oxley, Luke Graham
  */
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 
 public class ParserProject {
     private final LinkedList<Token> tokens;
-    private final List<AtomOperation> atoms = new ArrayList<>();  // List to Store Generated Atoms
-    private final Stack<AtomOperation> atomStack = new Stack<>();
+    private final LinkedList<AtomOperation> atomQueue = new LinkedList<>();
 
     private Token currentToken;  // Current Token being Processed
 
@@ -66,7 +63,7 @@ public class ParserProject {
             reject();
         }
 
-        return atoms;
+        return atomQueue;
     }
 
     private boolean block() {
@@ -75,8 +72,10 @@ public class ParserProject {
                 expect(TokenType.CLOSING_CURLY_BRACKET);
     }
 
-    private boolean statements() {  // Parses a Sequence of Statements
-        if (statement() && currentToken != null) {
+    private boolean statements() {
+        boolean statementIsValid =  statement();
+
+        if (statementIsValid && currentToken != null) {
             statements();
         }
 
@@ -97,21 +96,21 @@ public class ParserProject {
             AtomOperation beforeLabel = generateLabel("before_for");
             AtomOperation afterLabel = generateLabel("after_for");
 
-            atoms.add(beforeLabel);
-            atomStack.push(new AtomOperation(Operation.TST));
-            atomStack.peek().setDest(afterLabel.getDest());
+            atomQueue.offer(beforeLabel);
+            atomQueue.offer(new AtomOperation(Operation.TST));
+            atomQueue.peekLast().setDest(afterLabel.getDest());
 
             if (condition()) {
                 expect(TokenType.SEMICOLON);
                 assignment();
-                AtomOperation assignment = atoms.removeLast();
+                AtomOperation assignment = atomQueue.pollLast();
                 expect(TokenType.CLOSING_PARENTHESIS);
 
                 boolean blockIsValid = block();
 
-                atoms.add(assignment);
-                atoms.add(new AtomOperation(Operation.JMP, null, null, null, null, beforeLabel.getDest()));
-                atoms.add(afterLabel);
+                atomQueue.offer(assignment);
+                atomQueue.offer(new AtomOperation(Operation.JMP, null, null, null, null, beforeLabel.getDest()));
+                atomQueue.offer(afterLabel);
 
                 return blockIsValid;
             }
@@ -126,17 +125,16 @@ public class ParserProject {
             AtomOperation beforeLabel = generateLabel("before_while");
             AtomOperation afterLabel = generateLabel("after_while");
 
-            atoms.add(beforeLabel);
-            atomStack.push(new AtomOperation(Operation.TST));
-            atomStack.peek().setDest(afterLabel.getDest());
+            atomQueue.offer(beforeLabel);
+            atomQueue.offer(new AtomOperation(Operation.TST));
+            atomQueue.peekLast().setDest(afterLabel.getDest());
 
             if(condition()) {
-                atoms.add(atomStack.pop());
                 expect(TokenType.CLOSING_PARENTHESIS);
                 boolean blockIsValid = block();
 
-                atoms.add(new AtomOperation(Operation.JMP, null, null, null, null, beforeLabel.getDest()));
-                atoms.add(afterLabel);
+                atomQueue.offer(new AtomOperation(Operation.JMP, null, null, null, null, beforeLabel.getDest()));
+                atomQueue.offer(afterLabel);
 
                 return blockIsValid;
             }
@@ -146,26 +144,63 @@ public class ParserProject {
     }
 
     private boolean ifStatement() {
-        boolean ifIsValid = accept(TokenType.KEYWORD_IF) &&
-                expect(TokenType.OPENING_PARENTHESIS) &&
-                condition() &&
-                expect(TokenType.CLOSING_PARENTHESIS) &&
-                block();
+        if(accept(TokenType.KEYWORD_IF) && expect(TokenType.OPENING_PARENTHESIS)) {
+            AtomOperation afterLabel = generateLabel("after_if");
 
-        return ifIsValid && elseStatement() || ifIsValid;
+            atomQueue.offer(new AtomOperation(Operation.TST));
+            atomQueue.peekLast().setDest(afterLabel.getDest());
+
+            if(condition()) {
+                expect(TokenType.CLOSING_PARENTHESIS);
+
+                boolean blockIsValid = block();
+
+                atomQueue.offer(new AtomOperation(Operation.JMP, null, null, null, null, afterLabel.getDest()));
+
+                if(!elseStatement()) {
+                    for(int i = atomQueue.size() - 1; i >= 0; i--) {
+                        if(atomQueue.get(i).getOp() == Operation.TST) {
+                            atomQueue.get(i).setDest(afterLabel.getDest());
+                            break;
+                        }
+                    }
+                }
+
+                atomQueue.offer(afterLabel);
+
+                return blockIsValid;
+            }
+        }
+
+        return false;
     }
 
-
     private boolean elseStatement() {
-        return accept(TokenType.KEYWORD_ELSE) && (ifStatement() || block());
+        if(accept(TokenType.KEYWORD_ELSE)) {
+            AtomOperation beforeLabel = generateLabel("before_else");
+
+            atomQueue.offer(beforeLabel);
+
+            for(int i = atomQueue.size() - 1; i >= 0; i--) {
+                if(atomQueue.get(i).getOp() == Operation.TST) {
+                    atomQueue.get(i).setDest(beforeLabel.getDest());
+                    break;
+                }
+            }
+
+            return ifStatement() || block();
+        }
+
+        return false;
     }
 
     private boolean assignment() {
         type();
 
-        atomStack.push(new AtomOperation(null, null, null, currentToken.value(), null, null));
+        if (peek(TokenType.IDENTIFIER)) {
+            atomQueue.offer(new AtomOperation(null, null, null, currentToken.value(), null, null));
+            accept(TokenType.IDENTIFIER);
 
-        if (accept(TokenType.IDENTIFIER)) {
             if (opUnaryMath()) {
                 return true;
             }
@@ -182,6 +217,7 @@ public class ParserProject {
         } else if (accept(TokenType.OPENING_PARENTHESIS)) {
             return expression() && expect(TokenType.CLOSING_PARENTHESIS);
         }
+
         return false;
     }
 
@@ -199,7 +235,7 @@ public class ParserProject {
 
     private boolean factor() {
         Token factorToken = currentToken;
-        AtomOperation atom = atomStack.peek();
+        AtomOperation atom = atomQueue.peekLast();
 
         if(accept(TokenType.IDENTIFIER)) {
             if(atom.getLeft() == null) {
@@ -212,8 +248,6 @@ public class ParserProject {
                 if(atom.getRight() == null) {
                     atom.setOp(Operation.MOV);
                 }
-
-                atoms.add(atomStack.pop());
             }
 
             return true;
@@ -235,8 +269,6 @@ public class ParserProject {
                 if(atom.getRight() == null) {
                     atom.setOp(Operation.MOV);
                 }
-
-                atoms.add(atomStack.pop());
             }
 
             return true;
@@ -247,19 +279,19 @@ public class ParserProject {
 
     private boolean opMath() {  // Outputs Correctly
         if (accept(TokenType.ADD)) {
-            atomStack.peek().setOp(Operation.ADD);
+            atomQueue.peekLast().setOp(Operation.ADD);
 
             return true;
         } else if (accept(TokenType.SUBTRACT)) {
-            atomStack.peek().setOp(Operation.SUB);
+            atomQueue.peekLast().setOp(Operation.SUB);
 
             return true;
         } else if (accept(TokenType.MULTIPLY)) {
-            atomStack.peek().setOp(Operation.MUL);
+            atomQueue.peekLast().setOp(Operation.MUL);
 
             return true;
         } else if (accept(TokenType.DIVIDE)) {
-            atomStack.peek().setOp(Operation.DIV);
+            atomQueue.peekLast().setOp(Operation.DIV);
 
             return true;
         }
@@ -268,20 +300,20 @@ public class ParserProject {
     }
 
     private boolean opUnaryMath() {
-        AtomOperation atom = atomStack.peek();
+        AtomOperation atom = atomQueue.peekLast();
 
         if (accept(TokenType.INCREMENT)) {
             atom.setOp(Operation.ADD);
             atom.setRight("1");
             atom.setLeft(atom.getResult());
 
-            return atoms.add(atomStack.pop());
+            return true;
         } else if (accept(TokenType.DECREMENT)) {
             atom.setOp(Operation.SUB);
             atom.setRight("1");
             atom.setLeft(atom.getResult());
 
-            return atoms.add(atomStack.pop());
+            return true;
         }
 
         return false;
@@ -289,20 +321,20 @@ public class ParserProject {
 
     private boolean opNegate() {
         if(peek(TokenType.IDENTIFIER)) {
-            AtomOperation atom = atomStack.pop();
+            AtomOperation atom = atomQueue.peekLast();
 
             atom.setOp(Operation.NEG);
             atom.setLeft(currentToken.value());
             accept(TokenType.IDENTIFIER);
 
-            return atoms.add(atom);
+            return true;
         }
 
         return false;
     }
 
     private boolean opComparison() {
-        AtomOperation atom = atomStack.peek();
+        AtomOperation atom = atomQueue.peekLast();
 
         if(accept(TokenType.EQUAL)) {
             atom.setCmp("6");
@@ -322,7 +354,7 @@ public class ParserProject {
     }
 
     private AtomOperation generateLabel(String baseName) {
-        return new AtomOperation(Operation.LBL, null, null , null, null, "%s_%d".formatted(baseName, atoms.size()));
+        return new AtomOperation(Operation.LBL, null, null , null, null, "%s_%d".formatted(baseName, atomQueue.size()));
     }
 
 }
