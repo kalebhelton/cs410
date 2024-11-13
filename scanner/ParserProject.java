@@ -15,13 +15,6 @@ public class ParserProject {
     private final Stack<AtomOperation> atomStack = new Stack<>();
 
     private Token currentToken;  // Current Token being Processed
-    private Operation operation; // Stack for atom management
-    private String left;
-    private String right;
-    private String result;
-    private String cmp;
-    private String source;
-    private String dest;
 
     public ParserProject(List<Token> tokens) {
         this.tokens = new LinkedList<>(tokens);
@@ -115,8 +108,6 @@ public class ParserProject {
             // Condition check 
             if (condition()) {
                 AtomOperation conditionAtom = atomStack.peek();
-                conditionAtom.cmp = "5";
-                conditionAtom.dest = generateNewLabel("after_for"); // Label for jumping out of loop if condition fails
                 endAtom();
 
                 expect(TokenType.SEMICOLON);
@@ -129,7 +120,6 @@ public class ParserProject {
                 atoms.add(new AtomOperation(Operation.JMP, null, null, null, null, null, topLabel));
 
                 // End of the loop (after_for label)
-                atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, conditionAtom.dest));
 
                 return block();
             }
@@ -152,18 +142,7 @@ public class ParserProject {
                 condition() &&
                 expect(TokenType.CLOSING_PARENTHESIS);
 
-
-        String afterIfLabel = generateNewLabel("after_if");
-        AtomOperation conditionAtom = atomStack.peek();
-        conditionAtom.cmp = "5";
-        conditionAtom.dest = afterIfLabel;
-        endAtom();
-
-
         ifIsValid = ifIsValid && block();
-
-
-        atoms.add(new AtomOperation(Operation.LBL, null, null, null, null, null, afterIfLabel));
 
         return ifIsValid && elseStatement() || ifIsValid;
     }
@@ -173,28 +152,7 @@ public class ParserProject {
         return accept(TokenType.KEYWORD_ELSE) && (ifStatement() || block());
     }
 
-    private String getComparisonCode(TokenType type) {
-        switch (type) {
-            case EQUAL:
-                return "0";
-            case NOT_EQUAL:
-                return "6";
-            case LESS_THAN:
-                return "2";
-            case GREATER_THAN:
-                return "3";
-            case LESS_THAN_OR_EQUAL:
-                return "4";
-            case GREATER_THAN_OR_EQUAL:
-                return "5";
-            default:
-                return "0"; // Default to 'always' as a fallback
-        }
-    }
-
     private boolean assignment() {
-        result = currentToken.value();
-
         type(); // Check Type
 
         if (accept(TokenType.IDENTIFIER)) {
@@ -206,19 +164,12 @@ public class ParserProject {
 
             return expect(TokenType.ASSIGN) && expression();  // Check Regular Assignment
         }
+
         return false;
     }
 
     private boolean expression() {
-        left = currentToken.value();
         if (factor()) {
-            if (peek(TokenType.SEMICOLON)) {
-                beginAtom(Operation.MOV);
-                AtomOperation atom = atomStack.peek();
-                atom.source = left;
-                atom.dest = result;
-                endAtom();
-            }
             return peek(TokenType.SEMICOLON) || opMath() && factor();
         } else if (accept(TokenType.OPENING_PARENTHESIS)) {
             return expression() && expect(TokenType.CLOSING_PARENTHESIS);
@@ -228,12 +179,6 @@ public class ParserProject {
 
     private boolean condition() {
         if (factor() && opComparison() && factor()) {
-            beginAtom(Operation.TST);
-            AtomOperation atom = atomStack.peek();
-            atom.left = left;
-            atom.right = right;
-            atom.cmp = cmp;
-            endAtom();
             return true;
         }
         return false;
@@ -250,8 +195,8 @@ public class ParserProject {
                 accept(TokenType.IDENTIFIER);
     }
 
-    private void beginAtom(Operation op) {
-        atomStack.push(new AtomOperation(op, null, null, null, null, null, null));
+    private AtomOperation beginAtom(Operation op) {
+        return atomStack.push(new AtomOperation(op, null, null, null, null, null, null));
     }
 
     private void endAtom() {
@@ -260,56 +205,25 @@ public class ParserProject {
 
     private boolean opMath() {  // Outputs Correctly
         if (accept(TokenType.ADD)) {
-            beginAtom(Operation.ADD);
-            AtomOperation atom = atomStack.peek();
-            atom.left = left;
-            atom.dest = result;
-            atom.source = currentToken.value();
-            endAtom();
             return true;
         } else if (accept(TokenType.SUBTRACT)) {
-            beginAtom(Operation.SUB);
-            AtomOperation atom = atomStack.peek();
-            atom.left = left;
-            atom.source = currentToken.value();
-            atom.dest = result;
-            endAtom();
             return true;
         } else if (accept(TokenType.MULTIPLY)) {
-            beginAtom(Operation.MUL);
-            AtomOperation atom = atomStack.peek();
-            atom.left = left;
-            atom.source = currentToken.value();
-            atom.dest = result;
-            endAtom();
             return true;
         } else if (accept(TokenType.DIVIDE)) {
-            beginAtom(Operation.DIV);
-            AtomOperation atom = atomStack.peek();
-            atom.left = left;
-            atom.source = currentToken.value();
-            atom.dest = result;
-            endAtom();
             return true;
         }
+
         return false;
     }
 
     private boolean opUnaryMath() {
         if (accept(TokenType.INCREMENT)) {
-            beginAtom(Operation.ADD);
-
-            if (!atomStack.isEmpty()) {
-                AtomOperation atom = atomStack.peek();
-                atom.left = result;    // Variable being Incremented
-                atom.right = "1";      // Increment by 1
-                atom.dest = result;  // Result
-                endAtom();
-                return true;
-            } else {
-                return false;
-            }
+            return atoms.add(new AtomOperation(Operation.ADD, "x", "1", "x", null, null, null));
+        } else if (accept(TokenType.DECREMENT)) {
+            return atoms.add(new AtomOperation(Operation.SUB, "x", "1", "x", null, null, null));
         }
+
         return false;
     }
 
@@ -318,16 +232,12 @@ public class ParserProject {
             beginAtom(Operation.SUB);
 
             if (!atomStack.isEmpty()) {
-                AtomOperation atom = atomStack.peek();
-                atom.left = result;    // Variable Being Decremented
-                atom.right = "1";      // Decrement by 1
-                atom.dest = result;  // Result
-                endAtom();
                 return true;
             } else {
                 return false;
             }
         }
+
         return false;
     }
 
@@ -339,23 +249,5 @@ public class ParserProject {
                 accept(TokenType.GREATER_THAN) ||
                 accept(TokenType.GREATER_THAN_OR_EQUAL);
     }
-
-    private boolean createAtom() {
-        atoms.add(new AtomOperation(operation, left, right, result, cmp, source, dest));
-
-        /* 
-        Reset all atom values
-        operation = null;
-        left = null;
-        right = null;
-        result = null;
-        cmp = null;
-        source = null;
-        dest = null;
-        */
-
-        return true;
-    }
-
 
 }
