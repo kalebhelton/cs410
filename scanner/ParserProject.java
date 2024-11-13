@@ -98,6 +98,7 @@ public class ParserProject {
 
             atomQueue.offer(beforeLabel);
             atomQueue.offer(new AtomOperation(Operation.TST));
+            atomQueue.peekLast().setResult("");
             atomQueue.peekLast().setDest(afterLabel.getDest());
 
             if (condition()) {
@@ -127,6 +128,7 @@ public class ParserProject {
 
             atomQueue.offer(beforeLabel);
             atomQueue.offer(new AtomOperation(Operation.TST));
+            atomQueue.peekLast().setResult("");
             atomQueue.peekLast().setDest(afterLabel.getDest());
 
             if(condition()) {
@@ -148,6 +150,7 @@ public class ParserProject {
             AtomOperation afterLabel = generateLabel("after_if");
 
             atomQueue.offer(new AtomOperation(Operation.TST));
+            atomQueue.peekLast().setResult("");
             atomQueue.peekLast().setDest(afterLabel.getDest());
 
             if(condition()) {
@@ -155,7 +158,7 @@ public class ParserProject {
 
                 boolean blockIsValid = block();
 
-                atomQueue.offer(new AtomOperation(Operation.JMP, null, null, null, null, afterLabel.getDest()));
+                atomQueue.offer(new AtomOperation(Operation.JMP, "", "", "", "", afterLabel.getDest()));
 
                 if(!elseStatement()) {
                     for(int i = atomQueue.size() - 1; i >= 0; i--) {
@@ -247,6 +250,7 @@ public class ParserProject {
             if(peek(TokenType.SEMICOLON)) {
                 if(atom.getRight() == null) {
                     atom.setOp(Operation.MOV);
+                    atom.setRight("");
                 }
             }
 
@@ -268,6 +272,7 @@ public class ParserProject {
             if(peek(TokenType.SEMICOLON)) {
                 if(atom.getRight() == null) {
                     atom.setOp(Operation.MOV);
+                    atom.setRight("");
                 }
             }
 
@@ -325,6 +330,7 @@ public class ParserProject {
 
             atom.setOp(Operation.NEG);
             atom.setLeft(currentToken.value());
+            atom.setRight("");
             accept(TokenType.IDENTIFIER);
 
             return true;
@@ -354,7 +360,7 @@ public class ParserProject {
     }
 
     private AtomOperation generateLabel(String baseName) {
-        return new AtomOperation(Operation.LBL, null, null , null, null, "%s_%d".formatted(baseName, atomQueue.size()));
+        return new AtomOperation(Operation.LBL, "", "" , "", "", "%s_%d".formatted(baseName, atomQueue.size()));
     }
 
 }
