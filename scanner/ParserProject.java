@@ -36,12 +36,16 @@ public class ParserProject {
     }
 
     private void reject(TokenType... expectedTypes) {
-        if (expectedTypes.length == 0)
-            throw new RuntimeException("Unexpected token: %s".formatted(currentToken.toString()));
-        if (expectedTypes.length == 1)
-            throw new RuntimeException("Expected " + expectedTypes[0] + " but found " + currentToken.toString());
-
-        throw new RuntimeException("Expected one of %s but found %s".formatted(String.join(", ", Arrays.stream(expectedTypes).map(Enum::toString).toArray(String[]::new)), currentToken.toString()));
+        if (expectedTypes.length == 0) {
+            System.out.printf("Unexpected token: %s%n", currentToken.toString());
+            System.exit(1);
+        } else if (expectedTypes.length == 1) {
+            System.out.println("Expected " + expectedTypes[0] + " but found " + currentToken.toString());
+            System.exit(1);
+        } else {
+            System.out.printf("Expected one of %s but found %s%n", String.join(", ", Arrays.stream(expectedTypes).map(Enum::toString).toArray(String[]::new)), currentToken.toString());
+            System.exit(1);
+        }
     }
 
     private boolean expect(TokenType type) {  //  If Token Doesn't Match Expected Type -> Throws Error
