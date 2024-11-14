@@ -69,13 +69,15 @@ public class AtomOperation {  // Individual Operations in Atom Form
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(op.toString());
+        StringBuilder sb = new StringBuilder("(" + op.toString());
+
 
         if(left != null) sb.append(", ").append(left);
         if(right != null) sb.append(", ").append(right);
         if(result != null) sb.append(", ").append(result);
         if(cmp != null) sb.append(", ").append(cmp);
         if(dest != null) sb.append(", ").append(dest);
+        sb.append(")");
 
         return sb.toString();
     }
