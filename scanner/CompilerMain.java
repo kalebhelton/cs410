@@ -11,5 +11,9 @@ public class CompilerMain {
                 "Atoms:\n%s\n",
                 String.join("\n", atoms.stream().map(AtomOperation::toString).toArray(String[]::new))
         );
+
+        // Code Generator Implementation
+        // byte[] machineCode = CodeGenerator.generateMachineCode(atoms);
+        // System.out.write(machineCode);
     }
 }
