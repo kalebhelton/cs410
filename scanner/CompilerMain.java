@@ -13,7 +13,9 @@ public class CompilerMain {
         );
 
         // Code Generator Implementation
-        // byte[] machineCode = CodeGenerator.generateMachineCode(atoms);
-        // System.out.write(machineCode);
+        byte[] machineCode = CodeGenerator.generateMachineCode(atoms);
+        for (byte b: machineCode) {
+            System.out.print(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+        }
     }
 }
