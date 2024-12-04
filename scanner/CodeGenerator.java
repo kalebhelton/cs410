@@ -1,9 +1,25 @@
 import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
 public class CodeGenerator {
-    public static byte[] generateMachineCode(List<AtomOperation> atoms) {
+
+    private final HashMap<String, Long> memory = new HashMap<>();
+
+    public CodeGenerator() {}
+
+    public void printMachineCode(byte[] bytes) {
+        for (int i = 0; i < bytes.length; i++) {
+            if(i % 4 == 0) {
+                System.out.println();
+            }
+
+            System.out.print(String.format("%8s", Integer.toBinaryString(bytes[i] & 0xFF)).replace(' ', '0'));
+        }
+    }
+
+    public byte[] generateMachineCode(List<AtomOperation> atoms) {
         ByteArrayOutputStream machineCode = new ByteArrayOutputStream();
 
         for (AtomOperation atom : atoms) {
@@ -13,11 +29,11 @@ public class CodeGenerator {
         return machineCode.toByteArray();
     }
 
-    private static byte[] translateAtomToMachineCode(AtomOperation atom) {
-        int r = 0;
-
+    private byte[] translateAtomToMachineCode(AtomOperation atom) {
         switch (atom.getOp()) {
             case Operation.MOV:
+                long r = getMemoryAddress(atom.getResult());
+
                 if(atom.getRight().isEmpty()) {
                     if(Objects.equals(atom.getLeft(), "0")) {
                         // If setting a value to 0 -> CLR
@@ -59,7 +75,7 @@ public class CodeGenerator {
         }
     }
 
-    private static int getComparison(String cmp) {
+    private int getComparison(String cmp) {
         switch (cmp) {
             case "always true":
                 return 0;
@@ -81,13 +97,23 @@ public class CodeGenerator {
     }
 
     // Translates the Instruction to a Byte Array -> Absolute Mode
-    private static byte[] encodeInstruction(MachineOperation operation, int cmp, int r, int a) {
-        int instruction = (operation.ordinal() << 28) | (cmp << 24) | (r << 20) | a;
+    private byte[] encodeInstruction(MachineOperation operation, int cmp, long r, int a) {
+        int instruction = (operation.ordinal() << 28) | (cmp << 24) | ((int) r << 20) | a;
         return new byte[]{
                 (byte) (instruction >> 24),
                 (byte) (instruction >> 16),
                 (byte) (instruction >> 8),
                 (byte) instruction
         };
+    }
+
+    private long getMemoryAddress(String symbol) {
+        if(memory.containsKey(symbol)) {
+            return memory.get(symbol);
+        }
+
+        memory.put(symbol, (long) memory.size());
+
+        return memory.size() - 1;
     }
 }
