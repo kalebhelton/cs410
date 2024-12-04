@@ -14,7 +14,7 @@ public class CodeGenerator {
 
     public void printMachineCode(byte[] bytes) {
         for (int i = 0; i < bytes.length; i++) {
-            if(i % 4 == 0) {
+            if (i % 4 == 0) {
                 System.out.println();
             }
 
@@ -33,34 +33,21 @@ public class CodeGenerator {
     private void translateAtomToMachineCode(AtomOperation atom) {
         switch (atom.getOp()) {
             case Operation.ADD:
-                if(Character.isDigit(atom.getLeft().charAt(0))) {
-                    if(Character.isDigit(atom.getRight().charAt(0))) {
-                        // number + number
-                        encodeInstruction(MachineOperation.STO, 0, 1, getRegisterMemoryAddress(1));
-                        encodeInstruction(MachineOperation.ADD, 0, 0, getRegisterMemoryAddress(1));
-                        encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(atom.getResult()));
-                    } else {
-                        // number + variable
-                        encodeInstruction(MachineOperation.ADD, 0, 0, getMemoryAddress(atom.getRight()));
-                        encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(atom.getResult()));
-                    }
-                } else {
-                    if(Character.isDigit(atom.getRight().charAt(0))) {
-                        // variable + number
-                        encodeInstruction(MachineOperation.ADD, 0, 0, getMemoryAddress(atom.getLeft()));
-                        encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(atom.getResult()));
-                    } else {
-                        // variable + variable
-                        encodeInstruction(MachineOperation.LOD, 0, 0, getMemoryAddress(atom.getLeft()));
-                        encodeInstruction(MachineOperation.ADD, 0, 0, getMemoryAddress(atom.getRight()));
-                        encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(atom.getResult()));
-                    }
-                }
+                encodeMathOperation(MachineOperation.ADD, atom.getLeft(), atom.getRight(), atom.getResult());
+                break;
+            case Operation.SUB:
+                encodeMathOperation(MachineOperation.SUB, atom.getLeft(), atom.getRight(), atom.getResult());
+                break;
+            case Operation.MUL:
+                encodeMathOperation(MachineOperation.MUL, atom.getLeft(), atom.getRight(), atom.getResult());
+                break;
+            case Operation.DIV:
+                encodeMathOperation(MachineOperation.DIV, atom.getLeft(), atom.getRight(), atom.getResult());
                 break;
             case Operation.MOV:
                 long a = getMemoryAddress(atom.getResult());
 
-                if(Objects.equals(atom.getLeft(), "0")) {
+                if (Objects.equals(atom.getLeft(), "0")) {
                     // If setting a value to 0 -> CLR
                     encodeInstruction(MachineOperation.CLR, 0, 0, 0);
                 }
@@ -105,14 +92,49 @@ public class CodeGenerator {
         });
     }
 
+    private void encodeMathOperation(MachineOperation operation, String left, String right, String result) {
+        if (operation != MachineOperation.ADD &&
+                operation != MachineOperation.SUB &&
+                operation != MachineOperation.MUL &&
+                operation != MachineOperation.DIV) {
+            throw new IllegalArgumentException("Invalid math operation: " + operation);
+        }
+
+        if (Character.isDigit(left.charAt(0))) {
+            if (Character.isDigit(right.charAt(0))) {
+                // number <op> number
+                encodeInstruction(MachineOperation.STO, 0, 1, getRegisterMemoryAddress(1));
+                encodeInstruction(operation, 0, 0, getRegisterMemoryAddress(1));
+                encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(result));
+            } else {
+                // number <op> variable
+                encodeInstruction(operation, 0, 0, getMemoryAddress(right));
+                encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(result));
+            }
+        } else {
+            if (Character.isDigit(right.charAt(0))) {
+                // variable <op> number
+                encodeInstruction(MachineOperation.LOD, 0, 1, getMemoryAddress(left));
+                encodeInstruction(MachineOperation.STO, 0, 0, getRegisterMemoryAddress(0));
+                encodeInstruction(operation, 0, 1, getRegisterMemoryAddress(0));
+                encodeInstruction(MachineOperation.STO, 0, 1, getMemoryAddress(result));
+            } else {
+                // variable <op> variable
+                encodeInstruction(MachineOperation.LOD, 0, 0, getMemoryAddress(left));
+                encodeInstruction(operation, 0, 0, getMemoryAddress(right));
+                encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(result));
+            }
+        }
+    }
+
     private void initializeRegisterMemory() {
-        for(int i = 0; i < 16; i++) {
+        for (int i = 0; i < 16; i++) {
             memory.put(String.valueOf(i), (long) Math.pow(2, 20) - 1 - i);
         }
     }
 
     private long getMemoryAddress(String symbol) {
-        if(!memory.containsKey(symbol)) {
+        if (!memory.containsKey(symbol)) {
             memory.put(symbol, (long) memory.size() - 16);
         }
 
