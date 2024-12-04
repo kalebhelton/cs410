@@ -5,6 +5,8 @@ import java.util.Objects;
 
 public class CodeGenerator {
 
+    private static final long MAX_MEMORY_SIZE = (long) Math.pow(2, 20) - 1;
+
     private final HashMap<String, Long> memory = new HashMap<>();
     private final ByteArrayOutputStream machineCode = new ByteArrayOutputStream();
 
@@ -27,6 +29,8 @@ public class CodeGenerator {
             translateAtomToMachineCode(atom);
         }
 
+        encodeInstruction(MachineOperation.HLT, 0, 0, 0);
+
         return machineCode.toByteArray();
     }
 
@@ -45,11 +49,23 @@ public class CodeGenerator {
                 encodeMathOperation(MachineOperation.DIV, atom.getLeft(), atom.getRight(), atom.getResult());
                 break;
             case Operation.JMP:
+                // Encode an always true cmp to set the flag to true before jumping
+                encodeBooleanOperation("0", "0", "0");
                 // TODO: set values based on label + fixup tables
                 encodeInstruction(MachineOperation.JMP, 0, 0, 0);
                 break;
             case Operation.NEG:
                 encodeMathOperation(MachineOperation.SUB, "0", atom.getLeft(), atom.getResult());
+                break;
+            case Operation.LBL:
+                // Creates the memory address for the label
+                getMemoryAddress(atom.getDest());
+                // TODO: label + fixup tables
+                break;
+            case Operation.TST:
+                encodeBooleanOperation(atom.getLeft(), atom.getRight(), atom.getCmp());
+                // TODO: set values based on label + fixup tables
+                encodeInstruction(MachineOperation.JMP, 0, 0, 0);
                 break;
             case Operation.MOV:
                 long a = getMemoryAddress(atom.getResult());
@@ -134,14 +150,44 @@ public class CodeGenerator {
         }
     }
 
+    private void encodeBooleanOperation(String left, String right, String cmp) {
+        int cmpInt = Integer.parseInt(cmp);
+
+        if (Character.isDigit(left.charAt(0))) {
+            if (Character.isDigit(right.charAt(0))) {
+                // number <op> number
+                encodeInstruction(MachineOperation.STO, 0, 1, getRegisterMemoryAddress(1));
+                encodeInstruction(MachineOperation.CMP, cmpInt, 0, getRegisterMemoryAddress(1));
+            } else {
+                // number <op> variable
+                encodeInstruction(MachineOperation.CMP, cmpInt, 0, getMemoryAddress(right));
+            }
+        } else {
+            if (Character.isDigit(right.charAt(0))) {
+                // variable <op> number
+                encodeInstruction(MachineOperation.LOD, 0, 1, getMemoryAddress(left));
+                encodeInstruction(MachineOperation.STO, 0, 0, getRegisterMemoryAddress(0));
+                encodeInstruction(MachineOperation.CMP, cmpInt, 1, getRegisterMemoryAddress(0));
+            } else {
+                // variable <op> variable
+                encodeInstruction(MachineOperation.LOD, 0, 0, getMemoryAddress(left));
+                encodeInstruction(MachineOperation.CMP, cmpInt, 0, getMemoryAddress(right));
+            }
+        }
+    }
+
     private void initializeRegisterMemory() {
         for (int i = 0; i < 16; i++) {
-            memory.put(String.valueOf(i), (long) Math.pow(2, 20) - 1 - i);
+            memory.put(String.valueOf(i), CodeGenerator.MAX_MEMORY_SIZE - i);
         }
     }
 
     private long getMemoryAddress(String symbol) {
         if (!memory.containsKey(symbol)) {
+            if(memory.size() == CodeGenerator.MAX_MEMORY_SIZE) {
+                throw new OutOfMemoryError("Out of memory");
+            }
+
             memory.put(symbol, (long) memory.size() - 16);
         }
 
