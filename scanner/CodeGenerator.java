@@ -1,5 +1,4 @@
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -7,8 +6,11 @@ import java.util.Objects;
 public class CodeGenerator {
 
     private final HashMap<String, Long> memory = new HashMap<>();
+    private final ByteArrayOutputStream machineCode = new ByteArrayOutputStream();
 
-    public CodeGenerator() {}
+    public CodeGenerator() {
+        initializeRegisterMemory();
+    }
 
     public void printMachineCode(byte[] bytes) {
         for (int i = 0; i < bytes.length; i++) {
@@ -21,61 +23,53 @@ public class CodeGenerator {
     }
 
     public byte[] generateMachineCode(List<AtomOperation> atoms) {
-        ByteArrayOutputStream machineCode = new ByteArrayOutputStream();
-
         for (AtomOperation atom : atoms) {
-            machineCode.writeBytes(translateAtomToMachineCode(atom));
+            translateAtomToMachineCode(atom);
         }
 
         return machineCode.toByteArray();
     }
 
-    private byte[] translateAtomToMachineCode(AtomOperation atom) {
-        ByteArrayOutputStream result = new ByteArrayOutputStream();
-
+    private void translateAtomToMachineCode(AtomOperation atom) {
         switch (atom.getOp()) {
+            case Operation.ADD:
+                if(Character.isDigit(atom.getLeft().charAt(0))) {
+                    if(Character.isDigit(atom.getRight().charAt(0))) {
+                        // number + number
+                        encodeInstruction(MachineOperation.STO, 0, 1, getRegisterMemoryAddress(1));
+                        encodeInstruction(MachineOperation.ADD, 0, 0, getRegisterMemoryAddress(1));
+                        encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(atom.getResult()));
+                    } else {
+                        // number + variable
+                        encodeInstruction(MachineOperation.ADD, 0, 0, getMemoryAddress(atom.getRight()));
+                        encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(atom.getResult()));
+                    }
+                } else {
+                    if(Character.isDigit(atom.getRight().charAt(0))) {
+                        // variable + number
+                        encodeInstruction(MachineOperation.ADD, 0, 0, getMemoryAddress(atom.getLeft()));
+                        encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(atom.getResult()));
+                    } else {
+                        // variable + variable
+                        encodeInstruction(MachineOperation.LOD, 0, 0, getMemoryAddress(atom.getLeft()));
+                        encodeInstruction(MachineOperation.ADD, 0, 0, getMemoryAddress(atom.getRight()));
+                        encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(atom.getResult()));
+                    }
+                }
+                break;
             case Operation.MOV:
                 long a = getMemoryAddress(atom.getResult());
 
                 if(Objects.equals(atom.getLeft(), "0")) {
                     // If setting a value to 0 -> CLR
-                    result.writeBytes(encodeInstruction(MachineOperation.CLR, 0, 0, 0));
+                    encodeInstruction(MachineOperation.CLR, 0, 0, 0);
                 }
 
-                result.writeBytes(encodeInstruction(MachineOperation.STO, 0, 0, a));
+                encodeInstruction(MachineOperation.STO, 0, 0, a);
                 break;
-//            case ADD:
-//                a = Integer.parseInt(atom.getRight());
-//                return encodeInstruction(opcode, cmp, r, a);
-//            case SUB:
-//                a = Integer.parseInt(atom.getRight());
-//                return encodeInstruction(opcode, cmp, r, a);
-//            case MUL:
-//                a = Integer.parseInt(atom.getRight());
-//                return encodeInstruction(opcode, cmp, r, a);
-//            case DIV:
-//                a = Integer.parseInt(atom.getRight());
-//                return encodeInstruction(opcode, cmp, r, a);
-//            case JMP:
-//                a = Integer.parseInt(atom.getRight());
-//                return encodeInstruction(opcode, cmp, r, a);
-//            case CMP:
-//                cmp = getComparison(atom.getCmp());
-//                a = Integer.parseInt(atom.getRight());
-//                return encodeInstruction(opcode, cmp, r, a);
-//            case LOD:
-//                a = Integer.parseInt(atom.getRight());
-//                return encodeInstruction(opcode, cmp, r, a);
-//            case STO:
-//                a = Integer.parseInt(atom.getRight());
-//                return encodeInstruction(opcode, cmp, r, a);
-//            case HLT:
-//                return encodeInstruction(opcode, cmp, r, 0);
             default:
                 throw new UnsupportedOperationException("Unknown operation: " + atom.getOp());
         }
-
-        return result.toByteArray();
     }
 
     private int getComparison(String cmp) {
@@ -100,24 +94,33 @@ public class CodeGenerator {
     }
 
     // Translates the Instruction to a Byte Array -> Absolute Mode
-    private byte[] encodeInstruction(MachineOperation operation, int cmp, int r, long a) {
+    private void encodeInstruction(MachineOperation operation, int cmp, int r, long a) {
         int instruction = (operation.ordinal() << 28) | (cmp << 24) | (r << 20) | (int) a;
 
-        return new byte[]{
+        machineCode.writeBytes(new byte[]{
                 (byte) (instruction >> 24),
                 (byte) (instruction >> 16),
                 (byte) (instruction >> 8),
                 (byte) instruction
-        };
+        });
+    }
+
+    private void initializeRegisterMemory() {
+        for(int i = 0; i < 16; i++) {
+            memory.put(String.valueOf(i), (long) Math.pow(2, 20) - 1 - i);
+        }
     }
 
     private long getMemoryAddress(String symbol) {
-        if(memory.containsKey(symbol)) {
-            return memory.get(symbol);
+        if(!memory.containsKey(symbol)) {
+            memory.put(symbol, (long) memory.size() - 16);
         }
 
-        memory.put(symbol, (long) memory.size());
-
-        return memory.size() - 1;
+        return memory.get(symbol);
     }
+
+    private long getRegisterMemoryAddress(int register) {
+        return getMemoryAddress(String.valueOf(register));
+    }
+
 }
