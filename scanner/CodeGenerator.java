@@ -44,6 +44,13 @@ public class CodeGenerator {
             case Operation.DIV:
                 encodeMathOperation(MachineOperation.DIV, atom.getLeft(), atom.getRight(), atom.getResult());
                 break;
+            case Operation.JMP:
+                // TODO: set values based on label + fixup tables
+                encodeInstruction(MachineOperation.JMP, 0, 0, 0);
+                break;
+            case Operation.NEG:
+                encodeMathOperation(MachineOperation.SUB, "0", atom.getLeft(), atom.getResult());
+                break;
             case Operation.MOV:
                 long a = getMemoryAddress(atom.getResult());
 
