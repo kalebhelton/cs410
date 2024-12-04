@@ -1,4 +1,5 @@
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -30,19 +31,19 @@ public class CodeGenerator {
     }
 
     private byte[] translateAtomToMachineCode(AtomOperation atom) {
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+
         switch (atom.getOp()) {
             case Operation.MOV:
-                long r = getMemoryAddress(atom.getResult());
+                long a = getMemoryAddress(atom.getResult());
 
-                if(atom.getRight().isEmpty()) {
-                    if(Objects.equals(atom.getLeft(), "0")) {
-                        // If setting a value to 0 -> CLR
-                        return encodeInstruction(MachineOperation.CLR, 0, r, 0);
-                    } else {
-                        // Otherwise STO
-                        return encodeInstruction(MachineOperation.STO, 0, r, 0);
-                    }
+                if(Objects.equals(atom.getLeft(), "0")) {
+                    // If setting a value to 0 -> CLR
+                    result.writeBytes(encodeInstruction(MachineOperation.CLR, 0, 0, 0));
                 }
+
+                result.writeBytes(encodeInstruction(MachineOperation.STO, 0, 0, a));
+                break;
 //            case ADD:
 //                a = Integer.parseInt(atom.getRight());
 //                return encodeInstruction(opcode, cmp, r, a);
@@ -73,6 +74,8 @@ public class CodeGenerator {
             default:
                 throw new UnsupportedOperationException("Unknown operation: " + atom.getOp());
         }
+
+        return result.toByteArray();
     }
 
     private int getComparison(String cmp) {
@@ -97,8 +100,9 @@ public class CodeGenerator {
     }
 
     // Translates the Instruction to a Byte Array -> Absolute Mode
-    private byte[] encodeInstruction(MachineOperation operation, int cmp, long r, int a) {
-        int instruction = (operation.ordinal() << 28) | (cmp << 24) | ((int) r << 20) | a;
+    private byte[] encodeInstruction(MachineOperation operation, int cmp, int r, long a) {
+        int instruction = (operation.ordinal() << 28) | (cmp << 24) | (r << 20) | (int) a;
+
         return new byte[]{
                 (byte) (instruction >> 24),
                 (byte) (instruction >> 16),
