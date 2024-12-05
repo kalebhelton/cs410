@@ -1,39 +1,46 @@
 import java.io.ByteArrayOutputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
 public class CodeGenerator {
 
-    private static final long MAX_MEMORY_SIZE = (long) Math.pow(2, 20) - 1;
 
-    private final HashMap<String, Long> memory = new HashMap<>();
-    private final ByteArrayOutputStream machineCode = new ByteArrayOutputStream();
+    private final Memory memory = new Memory();
 
     public CodeGenerator() {
-        initializeRegisterMemory();
     }
 
-    public void printMachineCode(byte[] bytes) {
-        for (int i = 0; i < bytes.length; i++) {
+    /**
+     * Prints the generated machine code
+     */
+    public void printMachineCode() {
+        byte[] machineCode = getMachineCode();
+
+        for (int i = 0; i < machineCode.length; i++) {
             if (i % 4 == 0) {
                 System.out.println();
             }
 
-            System.out.print(String.format("%8s", Integer.toBinaryString(bytes[i] & 0xFF)).replace(' ', '0'));
+            System.out.print(String.format("%8s", Integer.toBinaryString(machineCode[i] & 0xFF)).replace(' ', '0'));
         }
     }
 
-    public byte[] generateMachineCode(List<AtomOperation> atoms) {
+    /**
+     * Converts a list of atoms into machine code
+     * @param atoms the atoms to convert
+     */
+    public void generateMachineCode(List<AtomOperation> atoms) {
         for (AtomOperation atom : atoms) {
             translateAtomToMachineCode(atom);
         }
 
         encodeInstruction(MachineOperation.HLT, 0, 0, 0);
-
-        return machineCode.toByteArray();
     }
 
+    /**
+     * Generates machine code given an atom
+     * @param atom the atom to translate into machine code
+     */
     private void translateAtomToMachineCode(AtomOperation atom) {
         switch (atom.getOp()) {
             case Operation.ADD:
@@ -58,8 +65,6 @@ public class CodeGenerator {
                 encodeMathOperation(MachineOperation.SUB, "0", atom.getLeft(), atom.getResult());
                 break;
             case Operation.LBL:
-                // Creates the memory address for the label
-                getMemoryAddress(atom.getDest());
                 // TODO: label + fixup tables
                 break;
             case Operation.TST:
@@ -68,53 +73,41 @@ public class CodeGenerator {
                 encodeInstruction(MachineOperation.JMP, 0, 0, 0);
                 break;
             case Operation.MOV:
-                long a = getMemoryAddress(atom.getResult());
-
                 if (Objects.equals(atom.getLeft(), "0")) {
                     // If setting a value to 0 -> CLR
                     encodeInstruction(MachineOperation.CLR, 0, 0, 0);
+                } else {
+                    storeOperationConstants(atom.getLeft(), null);
+                    encodeInstruction(MachineOperation.LOD, 0, 0, memory.getMemoryAddress(atom.getLeft()));
                 }
 
-                encodeInstruction(MachineOperation.STO, 0, 0, a);
+                encodeInstruction(MachineOperation.STO, 0, 0, memory.getMemoryAddress(atom.getResult()));
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown operation: " + atom.getOp());
         }
     }
 
-    private int getComparison(String cmp) {
-        switch (cmp) {
-            case "always true":
-                return 0;
-            case "equal":
-                return 1;
-            case "lesser":
-                return 2;
-            case "greater":
-                return 3;
-            case "lesser or equal":
-                return 4;
-            case "greater or equal":
-                return 5;
-            case "unequal":
-                return 6;
-            default:
-                throw new IllegalArgumentException("Unknown comparison: " + cmp);
-        }
+    /**
+     * Encodes an instruction into a 32-bit integer
+     * @param operation the operation to encode
+     * @param cmp the comparison to encode from 0 to 6 inclusive
+     * @param r the register to encode from 0 to 15 inclusive
+     * @param a the memory address to encode from 0 to 2^20 - 1 inclusive
+     */
+    private void encodeInstruction(MachineOperation operation, int cmp, int r, int a) {
+        int instruction = (operation.ordinal() << 28) | (cmp << 24) | (r << 20) | a;
+
+        memory.putInMemory(null, instruction, true);
     }
 
-    // Translates the Instruction to a Byte Array -> Absolute Mode
-    private void encodeInstruction(MachineOperation operation, int cmp, int r, long a) {
-        int instruction = (operation.ordinal() << 28) | (cmp << 24) | (r << 20) | (int) a;
-
-        machineCode.writeBytes(new byte[]{
-                (byte) (instruction >> 24),
-                (byte) (instruction >> 16),
-                (byte) (instruction >> 8),
-                (byte) instruction
-        });
-    }
-
+    /**
+     * Encodes machine instructions for a math operation
+     * @param operation the operation to perform
+     * @param left the left side of the operation
+     * @param right the right side of the operation
+     * @param result the symbol that the result is stored in
+     */
     private void encodeMathOperation(MachineOperation operation, String left, String right, String result) {
         if (operation != MachineOperation.ADD &&
                 operation != MachineOperation.SUB &&
@@ -123,79 +116,61 @@ public class CodeGenerator {
             throw new IllegalArgumentException("Invalid math operation: " + operation);
         }
 
-        if (Character.isDigit(left.charAt(0))) {
-            if (Character.isDigit(right.charAt(0))) {
-                // number <op> number
-                encodeInstruction(MachineOperation.STO, 0, 1, getRegisterMemoryAddress(1));
-                encodeInstruction(operation, 0, 0, getRegisterMemoryAddress(1));
-                encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(result));
-            } else {
-                // number <op> variable
-                encodeInstruction(operation, 0, 0, getMemoryAddress(right));
-                encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(result));
-            }
-        } else {
-            if (Character.isDigit(right.charAt(0))) {
-                // variable <op> number
-                encodeInstruction(MachineOperation.LOD, 0, 1, getMemoryAddress(left));
-                encodeInstruction(MachineOperation.STO, 0, 0, getRegisterMemoryAddress(0));
-                encodeInstruction(operation, 0, 1, getRegisterMemoryAddress(0));
-                encodeInstruction(MachineOperation.STO, 0, 1, getMemoryAddress(result));
-            } else {
-                // variable <op> variable
-                encodeInstruction(MachineOperation.LOD, 0, 0, getMemoryAddress(left));
-                encodeInstruction(operation, 0, 0, getMemoryAddress(right));
-                encodeInstruction(MachineOperation.STO, 0, 0, getMemoryAddress(result));
-            }
-        }
+        storeOperationConstants(left, right);
+        encodeInstruction(MachineOperation.LOD, 0, 0, memory.getMemoryAddress(left));
+        encodeInstruction(operation, 0, 0, memory.getMemoryAddress(right));
+        encodeInstruction(MachineOperation.STO, 0, 0, memory.getMemoryAddress(result));
     }
 
+    /**
+     * Encodes machine instructions for a comparison
+     * @param left the left side of the comparison
+     * @param right the right side of the comparison
+     * @param cmp the code for the operation to perform
+     */
     private void encodeBooleanOperation(String left, String right, String cmp) {
         int cmpInt = Integer.parseInt(cmp);
 
-        if (Character.isDigit(left.charAt(0))) {
-            if (Character.isDigit(right.charAt(0))) {
-                // number <op> number
-                encodeInstruction(MachineOperation.STO, 0, 1, getRegisterMemoryAddress(1));
-                encodeInstruction(MachineOperation.CMP, cmpInt, 0, getRegisterMemoryAddress(1));
-            } else {
-                // number <op> variable
-                encodeInstruction(MachineOperation.CMP, cmpInt, 0, getMemoryAddress(right));
-            }
-        } else {
-            if (Character.isDigit(right.charAt(0))) {
-                // variable <op> number
-                encodeInstruction(MachineOperation.LOD, 0, 1, getMemoryAddress(left));
-                encodeInstruction(MachineOperation.STO, 0, 0, getRegisterMemoryAddress(0));
-                encodeInstruction(MachineOperation.CMP, cmpInt, 1, getRegisterMemoryAddress(0));
-            } else {
-                // variable <op> variable
-                encodeInstruction(MachineOperation.LOD, 0, 0, getMemoryAddress(left));
-                encodeInstruction(MachineOperation.CMP, cmpInt, 0, getMemoryAddress(right));
-            }
+        storeOperationConstants(left, right);
+        encodeInstruction(MachineOperation.LOD, 0, 0, memory.getMemoryAddress(left));
+        encodeInstruction(MachineOperation.CMP, cmpInt, 0, memory.getMemoryAddress(right));
+    }
+
+    /**
+     * Stores constant values in an arbitrary location in memory
+     * @param left a constant to store
+     * @param right a constant to store
+     */
+    private void storeOperationConstants(String left, String right) {
+        if (left != null && Character.isDigit(left.charAt(0))) {
+            memory.putInMemory(left, Double.parseDouble(left), false);
+        }
+
+        if (right != null && Character.isDigit(right.charAt(0))) {
+            memory.putInMemory(right, Double.parseDouble(right), false);
         }
     }
 
-    private void initializeRegisterMemory() {
-        for (int i = 0; i < 16; i++) {
-            memory.put(String.valueOf(i), CodeGenerator.MAX_MEMORY_SIZE - i);
+    /**
+     * Reads the machine code from memory and converts it to a byte array
+     * @return a byte array representing the machine code
+     */
+    private byte[] getMachineCode() {
+        ByteArrayOutputStream machineCode = new ByteArrayOutputStream();
+        int[] programMemory = memory.getProgramMemory();
+
+        for(int i = 0; i < memory.getProgramMemorySize(); i++) {
+            int instruction = programMemory[i];
+
+            machineCode.writeBytes(new byte[]{
+                    (byte) (instruction >> 24),
+                    (byte) (instruction >> 16),
+                    (byte) (instruction >> 8),
+                    (byte) instruction
+            });
         }
-    }
 
-    private long getMemoryAddress(String symbol) {
-        if (!memory.containsKey(symbol)) {
-            if(memory.size() == CodeGenerator.MAX_MEMORY_SIZE) {
-                throw new OutOfMemoryError("Out of memory");
-            }
-
-            memory.put(symbol, (long) memory.size() - 16);
-        }
-
-        return memory.get(symbol);
-    }
-
-    private long getRegisterMemoryAddress(int register) {
-        return getMemoryAddress(String.valueOf(register));
+        return machineCode.toByteArray();
     }
 
 }

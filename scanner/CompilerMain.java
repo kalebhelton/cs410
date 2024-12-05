@@ -15,6 +15,7 @@ public class CompilerMain {
         // Code Generator Implementation
         CodeGenerator codeGenerator = new CodeGenerator();
 
-        codeGenerator.printMachineCode(codeGenerator.generateMachineCode(atoms));
+        codeGenerator.generateMachineCode(atoms);
+        codeGenerator.printMachineCode();
     }
 }
