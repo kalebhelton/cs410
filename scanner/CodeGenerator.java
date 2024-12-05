@@ -58,19 +58,21 @@ public class CodeGenerator {
             case Operation.JMP:
                 // Encode an always true cmp to set the flag to true before jumping
                 encodeBooleanOperation("0", "0", "0");
-                // TODO: set values based on label + fixup tables
-                encodeInstruction(MachineOperation.JMP, 0, 0, 0);
+                // Set program counter (register 1) to memory address of the instruction to jump to
+                // TODO: get address from label table
+                encodeInstruction(MachineOperation.JMP, 0, 1, 0);
                 break;
             case Operation.NEG:
                 encodeMathOperation(MachineOperation.SUB, "0", atom.getLeft(), atom.getResult());
                 break;
             case Operation.LBL:
-                // TODO: label + fixup tables
+                // TODO: store label in table with the memory address of the next instruction as the label memory address
                 break;
             case Operation.TST:
                 encodeBooleanOperation(atom.getLeft(), atom.getRight(), atom.getCmp());
-                // TODO: set values based on label + fixup tables
-                encodeInstruction(MachineOperation.JMP, 0, 0, 0);
+                // Set program counter (register 1) to memory address of the instruction to jump to
+                // TODO: get address from label table
+                encodeInstruction(MachineOperation.JMP, 0, 1, 0);
                 break;
             case Operation.MOV:
                 if (Objects.equals(atom.getLeft(), "0")) {
