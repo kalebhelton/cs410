@@ -1,10 +1,12 @@
 import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
 public class CodeGenerator {
 
-
+    private HashMap<Integer, String> labelReferences = new HashMap<>();
+    private HashMap<String, Integer> labelTable = new HashMap<>();
     private final Memory memory = new Memory();
 
     public CodeGenerator() {
@@ -35,6 +37,7 @@ public class CodeGenerator {
         }
 
         encodeInstruction(MachineOperation.HLT, 0, 0, 0);
+        secondPass();
     }
 
     /**
@@ -42,6 +45,7 @@ public class CodeGenerator {
      * @param atom the atom to translate into machine code
      */
     private void translateAtomToMachineCode(AtomOperation atom) {
+
         switch (atom.getOp()) {
             case Operation.ADD:
                 encodeMathOperation(MachineOperation.ADD, atom.getLeft(), atom.getRight(), atom.getResult());
@@ -60,18 +64,21 @@ public class CodeGenerator {
                 encodeBooleanOperation("0", "0", "0");
                 // Set program counter (register 1) to memory address of the instruction to jump to
                 // TODO: get address from label table
+                labelReferences.put(memory.getProgramMemorySize(), atom.getDest());
                 encodeInstruction(MachineOperation.JMP, 0, 1, 0);
                 break;
             case Operation.NEG:
                 encodeMathOperation(MachineOperation.SUB, "0", atom.getLeft(), atom.getResult());
                 break;
             case Operation.LBL:
+                labelTable.put(atom.getDest(), memory.getProgramMemorySize());
                 // TODO: store label in table with the memory address of the next instruction as the label memory address
                 break;
             case Operation.TST:
                 encodeBooleanOperation(atom.getLeft(), atom.getRight(), atom.getCmp());
                 // Set program counter (register 1) to memory address of the instruction to jump to
                 // TODO: get address from label table
+                labelReferences.put(memory.getProgramMemorySize(), atom.getDest());
                 encodeInstruction(MachineOperation.JMP, 0, 1, 0);
                 break;
             case Operation.MOV:
@@ -173,6 +180,21 @@ public class CodeGenerator {
         }
 
         return machineCode.toByteArray();
+    }
+
+
+    public void secondPass() {
+        for (int i = 0; i < memory.getProgramMemorySize(); i++) {
+            int instruction = memory.getProgramMemory()[i];
+            MachineOperation operation = MachineOperation.values()[(instruction >> 28) & 0xF];
+
+            if (operation == MachineOperation.JMP) {
+                String label = labelReferences.get(i);
+                int address = labelTable.get(label);
+                instruction = (instruction & 0xFFF00000) | (address & 0xFFFFF);
+                memory.repaceMemoryAddress(i, instruction);
+            }
+        }
     }
 
 }

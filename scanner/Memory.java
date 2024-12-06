@@ -41,6 +41,12 @@ public class Memory {
         return memoryMap.get(symbol) + PROGRAM_MEMORY_SIZE;
     }
 
+    public void repaceMemoryAddress(int address, int value) {
+        programMemory[address] = value;
+    }
+
+
+
     /**
      * Sequentially adds a value into program memory
      * @param value the value to insert into program memory -> instructions stored here
