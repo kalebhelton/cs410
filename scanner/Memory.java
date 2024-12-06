@@ -2,7 +2,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Memory {
-
     private static final long MAX_MEMORY_SIZE = (long) Math.pow(2, 20) - 1;
     private static final int PROGRAM_MEMORY_SIZE = 10000;
 
@@ -38,14 +37,12 @@ public class Memory {
             putInMemory(symbol, 0, false);
         }
 
-        return memoryMap.get(symbol) + PROGRAM_MEMORY_SIZE;
+        return memoryMap.get(symbol) * 4 + PROGRAM_MEMORY_SIZE;
     }
 
-    public void repaceMemoryAddress(int address, int value) {
+    public void replaceProgramMemory(int address, int value) {
         programMemory[address] = value;
     }
-
-
 
     /**
      * Sequentially adds a value into program memory

@@ -24,6 +24,8 @@ public class CodeGenerator {
 
             System.out.print(String.format("%8s", Integer.toBinaryString(machineCode[i] & 0xFF)).replace(' ', '0'));
         }
+
+        System.out.println();
     }
 
     /**
@@ -188,9 +190,9 @@ public class CodeGenerator {
 
             if (operation == MachineOperation.JMP) {
                 String label = labelReferences.get(i);
-                int address = labelTable.get(label);
+                int address = labelTable.get(label) * 4;
                 instruction = (instruction & 0xFFF00000) | (address & 0xFFFFF);
-                memory.repaceMemoryAddress(i, instruction);
+                memory.replaceProgramMemory(i, instruction);
             }
         }
     }
