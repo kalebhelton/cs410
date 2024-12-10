@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 public class Memory {
     private static final long MAX_MEMORY_SIZE = (long) Math.pow(2, 20) - 1;
-    private static final int PROGRAM_MEMORY_SIZE = 10000;
+    private static final int PROGRAM_MEMORY_SIZE = 1000;
 
     private final int[] programMemory = new int[PROGRAM_MEMORY_SIZE];
     private int programMemoryIndex = 0;

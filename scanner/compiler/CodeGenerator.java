@@ -64,7 +64,6 @@ public class CodeGenerator {
                 // Encode an always true cmp to set the flag to true before jumping
                 encodeBooleanOperation("0", "0", "0");
                 // Set program counter (register 1) to memory address of the instruction to jump to
-                // TODO: get address from label table
                 labelReferences.put(memory.getProgramMemorySize(), atom.getDest());
                 encodeInstruction(MachineOperation.JMP, 0, 1, 0);
                 break;
@@ -73,12 +72,10 @@ public class CodeGenerator {
                 break;
             case LBL:
                 labelTable.put(atom.getDest(), memory.getProgramMemorySize());
-                // TODO: store label in table with the memory address of the next instruction as the label memory address
                 break;
             case TST:
                 encodeBooleanOperation(atom.getLeft(), atom.getRight(), atom.getCmp());
                 // Set program counter (register 1) to memory address of the instruction to jump to
-                // TODO: get address from label table
                 labelReferences.put(memory.getProgramMemorySize(), atom.getDest());
                 encodeInstruction(MachineOperation.JMP, 0, 1, 0);
                 break;
