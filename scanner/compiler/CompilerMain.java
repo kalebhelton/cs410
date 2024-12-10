@@ -16,15 +16,16 @@ public class CompilerMain {
         );
 
         // Code Generator Implementation
-        CodeGenerator codeGenerator = new CodeGenerator();
+        Memory memory = new Memory();
+        CodeGenerator codeGenerator = new CodeGenerator(memory);
 
         codeGenerator.generateMachineCode(atoms);
 
-        byte[] machineCode = codeGenerator.getMachineCode();
-        codeGenerator.printMachineCode(machineCode);
+        byte[] memoryBytes = memory.encode();
+        codeGenerator.printMachineCode(memoryBytes);
 
         FileOutputStream writer = new FileOutputStream("machineCode.bin");
-        writer.write(machineCode);
+        writer.write(memoryBytes);
         writer.close();
     }
 }

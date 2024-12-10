@@ -1,19 +1,17 @@
 package compiler;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Memory {
     private static final long MAX_MEMORY_SIZE = (long) Math.pow(2, 20) - 1;
-    private static final int PROGRAM_MEMORY_SIZE = 1000;
+    private static final int PROGRAM_MEMORY_SIZE = 512;
 
-    private final int[] programMemory = new int[PROGRAM_MEMORY_SIZE];
+    private final int[] programMemory = new int[PROGRAM_MEMORY_SIZE / 4];
     private int programMemoryIndex = 0;
     private final ArrayList<Double> generalMemory = new ArrayList<>();
     private final HashMap<String, Integer> memoryMap = new HashMap<>();
-
-    public Memory() {
-    }
 
     /**
      * Inserts a value into memory
@@ -39,7 +37,7 @@ public class Memory {
             putInMemory(symbol, 0, false);
         }
 
-        return memoryMap.get(symbol) * 4 + PROGRAM_MEMORY_SIZE;
+        return memoryMap.get(symbol) * 8 + PROGRAM_MEMORY_SIZE;
     }
 
     public void replaceProgramMemory(int address, int value) {
@@ -83,5 +81,36 @@ public class Memory {
 
     public int getProgramMemorySize() {
         return programMemoryIndex;
+    }
+
+    /**
+     * Encodes the entirety of memory into a byte array
+     * @return a byte array representing the machine's initial memory
+     */
+    public byte[] encode() {
+        ByteArrayOutputStream memoryOutput = new ByteArrayOutputStream();
+
+        for (int instruction : programMemory) {
+            memoryOutput.write((byte) (instruction >> 24));
+            memoryOutput.write((byte) (instruction >> 16));
+            memoryOutput.write((byte) (instruction >> 8));
+            memoryOutput.write((byte) instruction);
+        }
+
+        for (double value : generalMemory) {
+            long valueLongBits = Double.doubleToLongBits(value);
+            System.out.println(value);
+
+            memoryOutput.write((byte) (valueLongBits >> 56));
+            memoryOutput.write((byte) (valueLongBits >> 48));
+            memoryOutput.write((byte) (valueLongBits >> 40));
+            memoryOutput.write((byte) (valueLongBits >> 32));
+            memoryOutput.write((byte) (valueLongBits >> 24));
+            memoryOutput.write((byte) (valueLongBits >> 16));
+            memoryOutput.write((byte) (valueLongBits >> 8));
+            memoryOutput.write((byte) valueLongBits);
+        }
+
+        return memoryOutput.toByteArray();
     }
 }

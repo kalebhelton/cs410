@@ -8,9 +8,10 @@ import java.util.Objects;
 public class CodeGenerator {
     private final HashMap<Integer, String> labelReferences = new HashMap<>();
     private final HashMap<String, Integer> labelTable = new HashMap<>();
-    private final Memory memory = new Memory();
+    private final Memory memory;
 
-    public CodeGenerator() {
+    public CodeGenerator(Memory memory) {
+        this.memory = memory;
     }
 
     /**
@@ -156,28 +157,6 @@ public class CodeGenerator {
         if (right != null && Character.isDigit(right.charAt(0))) {
             memory.putInMemory(right, Double.parseDouble(right), false);
         }
-    }
-
-    /**
-     * Reads the machine code from memory and converts it to a byte array
-     * @return a byte array representing the machine code
-     */
-    public byte[] getMachineCode() {
-        ByteArrayOutputStream machineCode = new ByteArrayOutputStream();
-        int[] programMemory = memory.getProgramMemory();
-
-        for(int i = 0; i < memory.getProgramMemorySize(); i++) {
-            int instruction = programMemory[i];
-
-            machineCode.writeBytes(new byte[]{
-                    (byte) (instruction >> 24),
-                    (byte) (instruction >> 16),
-                    (byte) (instruction >> 8),
-                    (byte) instruction
-            });
-        }
-
-        return machineCode.toByteArray();
     }
 
     public void secondPass() {
