@@ -1,6 +1,7 @@
 package compiler;
 
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.util.List;
 
 public class CompilerMain {
@@ -9,6 +10,13 @@ public class CompilerMain {
         List<Token> tokens = ScannerProject.tokenizeInput("input.txt");
         ParserProject parser = new ParserProject(tokens);
         List<AtomOperation> atoms = parser.parse();
+        FileWriter atomFile = new FileWriter("atoms.txt");
+
+        for (AtomOperation atom : atoms) {
+            atomFile.write(atom.toString());
+            atomFile.write(System.lineSeparator());
+        }
+        atomFile.close();
 
         System.out.printf(
                 "Atoms:\n%s\n",
