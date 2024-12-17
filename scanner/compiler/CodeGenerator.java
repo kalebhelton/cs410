@@ -1,6 +1,5 @@
 package compiler;
 
-import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -29,6 +28,47 @@ public class CodeGenerator {
         System.out.println();
     }
 
+
+    private void optimizeLoadStore() {
+        int[] programMemory = memory.getProgramMemory();
+        int programMemorySize = memory.getProgramMemorySize();
+    
+        for (int i = 0; i < programMemorySize - 1; i++) {
+            //Grabs the instructions, operations, and addresses
+            int instruction1 = programMemory[i];
+            int instruction2 = programMemory[i + 1];
+    
+            MachineOperation operation1 = MachineOperation.values()[(instruction1 >> 28) & 0xF];
+            MachineOperation operation2 = MachineOperation.values()[(instruction2 >> 28) & 0xF];
+
+            int address1 = instruction1 & 0xFFFFF;
+            int address2 = instruction2 & 0xFFFFF;
+    
+            //Load and a store to the same address
+            if (operation1 == MachineOperation.LOD && operation2 == MachineOperation.STO && address1 == address2) {
+                //Remove redundant load
+                for (int j = i; j < programMemorySize - 1; j++) {
+                    programMemory[j] = programMemory[j + 1];
+                }
+                programMemorySize--; //Removes the load
+                i--; //Recheck index
+            }
+            //Store and then load to the same address
+            if (operation1 == MachineOperation.STO && operation2 == MachineOperation.LOD && address1 == address2) {
+                //Remove redundant store and load
+                for (int j = i; j < programMemorySize - 2; j++) {
+                    programMemory[j] = programMemory[j + 2];
+                }
+                programMemorySize -= 2; //Removes the load and store
+                i--; //Recheck index
+            }
+        }
+    
+        //Resets memory size
+        memory.setProgramMemorySize(programMemorySize);
+    }
+
+
     /**
      * Converts a list of atoms into machine code
      * @param atoms the atoms to convert
@@ -40,6 +80,7 @@ public class CodeGenerator {
 
         encodeInstruction(MachineOperation.HLT, 0, 0, 0);
         secondPass();
+        optimizeLoadStore(); //Still needs a flag to turn on and off
     }
 
     /**
