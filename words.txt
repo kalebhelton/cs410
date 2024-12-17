@@ -1,0 +1,6 @@
+(TST, x, 10, , 4, before_else_3)
+(ADD, 2, x, y)
+(JMP, , , , , after_if_0)
+(LBL, , , , , before_else_3)
+(MOV, 25, , y)
+(LBL, , , , , after_if_0)
