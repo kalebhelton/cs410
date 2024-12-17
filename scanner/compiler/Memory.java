@@ -83,6 +83,10 @@ public class Memory {
         return programMemoryIndex;
     }
 
+    public void setProgramMemorySize(int size) {
+        this.programMemoryIndex = size;
+    }
+
     /**
      * Encodes the entirety of memory into a byte array
      * @return a byte array representing the machine's initial memory
