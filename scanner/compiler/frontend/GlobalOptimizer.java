@@ -15,16 +15,12 @@ public class GlobalOptimizer {
 
     private static void removeBetweenJumpAndLabel(List<AtomOperation> atoms) {
         int i = 0;
-        boolean jumpFlag = false;
 
         while(i < atoms.size()) {
             if(atoms.get(i).getOp() == Operation.JMP) {
-                jumpFlag = true;
-            }
-
-            while (jumpFlag && atoms.get(i).getOp() != Operation.LBL) {
-                atoms.remove(i);
-                jumpFlag = false;
+                while (i < atoms.size() && atoms.get(i).getOp() != Operation.LBL) {
+                    atoms.remove(i);
+                }
             }
 
             i++;
@@ -61,7 +57,11 @@ public class GlobalOptimizer {
                     break;
                 case TST:
                     if(!testComparison(left, right, atom.getCmp())) {
-                        while(atoms.get(i).getOp() != Operation.LBL) {
+                        while(i < atoms.size() && atoms.get(i).getOp() != Operation.LBL) {
+                            atoms.remove(i);
+                        }
+
+                        if(i < atoms.size()) {
                             atoms.remove(i);
                         }
                     }
@@ -73,7 +73,6 @@ public class GlobalOptimizer {
 
     private static boolean testComparison(double left, double right, String cmp) {
         return switch (cmp) {
-            case "0" -> false;
             case "1" -> left != right;
             case "2" -> left >= right;
             case "3" -> left <= right;

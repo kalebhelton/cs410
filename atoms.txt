@@ -1,5 +1,5 @@
 (MOV, 10, , x)
-(LBL, , , , , before_else_4)
 (MUL, 3, x, y)
 (ADD, y, 5, y)
 (LBL, , , , , after_if_1)
+(LBL, , , , , before_while_8)
