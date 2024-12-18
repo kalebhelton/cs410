@@ -3,3 +3,7 @@
 (ADD, y, 5, y)
 (LBL, , , , , after_if_1)
 (LBL, , , , , before_while_8)
+(LBL, , , , , before_while_13)
+(TST, x, 10, , 6, after_while_13)
+(SUB, x, 1, x)
+(LBL, , , , , after_while_13)
