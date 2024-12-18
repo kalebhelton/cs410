@@ -32,7 +32,6 @@ public class GlobalOptimizer {
         int i = 0;
 
         while(i < atoms.size()) {
-            // TODO: if variable is an integer do not allow floating point values
             AtomOperation atom = atoms.get(i);
             Operation op = atom.getOp();
 
@@ -57,7 +56,18 @@ public class GlobalOptimizer {
                     break;
                 case TST:
                     if(!testComparison(left, right, atom.getCmp())) {
-                        System.out.println(left + " " + right);
+                        AtomOperation previous = atoms.get(i - 1);
+                        boolean isLoop = previous.getOp() == Operation.LBL && (previous.getDest().contains("while") || previous.getDest().contains("for"));
+
+                        if(isLoop) {
+                            // Verify the label matches the test
+                            String labelNumber = previous.getDest().substring(previous.getDest().lastIndexOf("_") + 1);
+
+                            if(atom.getDest().contains(labelNumber)) {
+                                atoms.remove(i - 1);
+                                i--;
+                            }
+                        }
 
                         while(i < atoms.size() && atoms.get(i).getOp() != Operation.LBL) {
                             atoms.remove(i);
