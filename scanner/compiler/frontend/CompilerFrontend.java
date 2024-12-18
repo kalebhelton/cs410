@@ -11,7 +11,6 @@ public class CompilerFrontend {
         CommandLineArguments commandLineArguments = new CommandLineArguments(args);
         ScannerProject.initializeStates();
 
-        // frontend
         List<Token> tokens = ScannerProject.tokenizeInput(commandLineArguments.getInput());
         ParserProject parser = new ParserProject(tokens);
         List<AtomOperation> atoms = parser.parse();

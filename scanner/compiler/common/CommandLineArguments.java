@@ -4,6 +4,7 @@ public class CommandLineArguments {
 
     private String input;
     private String output;
+    private int mode;
     private boolean doGlobalOptimization;
     private boolean doLocalOptimization;
 
@@ -17,6 +18,17 @@ public class CommandLineArguments {
             switch (args[i]) {
                 case "-g", "--global" -> doGlobalOptimization = true;
                 case "-l", "--local" -> doLocalOptimization = true;
+                case "-m", "--mode" -> {
+                    if (i < args.length - 1 && !args[i + 1].startsWith("-")) {
+                        try {
+                            mode = Integer.parseInt(args[i + 1]);
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException("Invalid mode. Mode must be 0, 1, or 2");
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Missing value for option %s".formatted(args[i]));
+                    }
+                }
                 case "-i", "--input" -> {
                     if (i < args.length - 1 && !args[i + 1].startsWith("-")) {
                         input = args[++i];
@@ -43,6 +55,10 @@ public class CommandLineArguments {
         if(output == null) {
             throw new IllegalArgumentException("Missing argument: output");
         }
+
+        if(mode < 0 || mode > 2) {
+            throw new IllegalArgumentException("Invalid mode. Mode must be 0, 1, or 2");
+        }
     }
 
     public String getInput() {
@@ -51,6 +67,10 @@ public class CommandLineArguments {
 
     public String getOutput() {
         return output;
+    }
+
+    public int getMode() {
+        return mode;
     }
 
     public boolean getDoGlobalOptimization() {
