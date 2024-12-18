@@ -1,3 +1,4 @@
+(MOV, 10, , x)
 (MUL, 3, x, x)
 (ADD, x, 5, x)
 (LBL, , , , , after_if_1)

@@ -56,8 +56,8 @@ public class GlobalOptimizer {
                     break;
                 case TST:
                     if(!testComparison(left, right, atom.getCmp())) {
-                        AtomOperation previous = atoms.get(i - 1);
-                        boolean isLoop = previous.getOp() == Operation.LBL && (previous.getDest().contains("while") || previous.getDest().contains("for"));
+                        AtomOperation previous = i > 0 ? atoms.get(i - 1) : null;
+                        boolean isLoop = previous != null && previous.getOp() == Operation.LBL && (previous.getDest().contains("while") || previous.getDest().contains("for"));
 
                         if(isLoop) {
                             // Verify the label matches the test
@@ -75,11 +75,6 @@ public class GlobalOptimizer {
 
                         if(i < atoms.size()) {
                             atoms.remove(i);
-                        }
-
-                        if(!isLoop) {
-                            atoms.remove(i - 1);
-                            i--;
                         }
 
                         // prevent incrementing i
