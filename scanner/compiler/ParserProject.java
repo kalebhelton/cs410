@@ -13,7 +13,6 @@ public class ParserProject {
     private final LinkedList<Token> tokens;
     private final LinkedList<AtomOperation> atomQueue = new LinkedList<>();
     private boolean optimizeGlobal;  // flag to control global optimization
-
     private Token currentToken;  // Current Token being Processed
 
     public ParserProject(List<Token> tokens) {
@@ -81,24 +80,22 @@ public class ParserProject {
         LinkedList <AtomOperation> optimizedAtomQueue = new LinkedList<>();
         boolean reachable = true;
 
-        for (AtomOperation atomOP : atomQueue){  // iterate through atomQueue + skip unreachable code
-            if (atomOP.getOp() == Operation.JMP && atomOP.getOp() != Operation.LBL){  // should check if the next operation after the JMP is a LBL
-                // there needs to be a loop that makes sure that the JMP label is added to aptimizedAtomQueue + not ommited
-                // while it's not a LBL -> leave it in the atomQueue -> atomQueue will be cleared 
+        for (AtomOperation atomOP : atomQueue) {  // iterate through atomQueue + skip unreachable code
+            if (atomOP.getOp() == Operation.JMP) {
+                optimizedAtomQueue.add(atomOP);  // Add JMP and mark as unreachable
                 reachable = false;
-            }
-
-            if (reachable){
+            } else if (atomOP.getOp() == Operation.LBL) { // Labels make code reachable again
+                reachable = true;
+                optimizedAtomQueue.add(atomOP);
+            } else if (reachable) { // Only add operations if reachable
                 optimizedAtomQueue.add(atomOP);
             }
-
-            // jmp w/o label after -> delete everything after until label -> don't delete the label
-
         }
 
         atomQueue.clear();
         atomQueue.addAll(optimizedAtomQueue);  // replace the original atomQueue w/ optimized one
     }
+
 
     private boolean block() {
         return expect(TokenType.OPENING_CURLY_BRACKET) &&
