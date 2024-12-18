@@ -1,4 +1,4 @@
-package compiler;
+package compiler.backend;
 
 public enum MachineOperation {
     CLR,

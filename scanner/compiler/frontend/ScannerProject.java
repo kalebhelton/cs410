@@ -3,7 +3,7 @@
  * Reviewers: Emily Krugman, Taylor Oxley
  */
 
-package compiler;
+package compiler.frontend;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -1,4 +1,4 @@
-package compiler;
+package compiler.backend;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -103,7 +103,6 @@ public class Memory {
 
         for (double value : generalMemory) {
             long valueLongBits = Double.doubleToLongBits(value);
-            System.out.println(value);
 
             memoryOutput.write((byte) (valueLongBits >> 56));
             memoryOutput.write((byte) (valueLongBits >> 48));

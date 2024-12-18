@@ -1,4 +1,4 @@
-package compiler;
+package compiler.common;
 
 public enum Operation {
     ADD,

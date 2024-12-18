@@ -1,4 +1,6 @@
-package compiler;
+package compiler.backend;
+
+import compiler.common.AtomOperation;
 
 import java.util.HashMap;
 import java.util.List;
