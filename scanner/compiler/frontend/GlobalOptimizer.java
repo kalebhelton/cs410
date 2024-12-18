@@ -76,6 +76,14 @@ public class GlobalOptimizer {
                         if(i < atoms.size()) {
                             atoms.remove(i);
                         }
+
+                        if(!isLoop) {
+                            atoms.remove(i - 1);
+                            i--;
+                        }
+
+                        // prevent incrementing i
+                        continue;
                     }
             }
 
