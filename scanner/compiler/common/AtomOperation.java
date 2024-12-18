@@ -1,4 +1,4 @@
-package compiler;
+package compiler.common;
 
 public class AtomOperation {  // Individual Operations in Atom Form
     private Operation op;

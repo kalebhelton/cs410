@@ -3,7 +3,10 @@
  * Reviewers: Emily Krugman, Taylor Oxley, Luke Graham
  */
 
-package compiler;
+package compiler.frontend;
+
+import compiler.common.AtomOperation;
+import compiler.common.Operation;
 
 import java.util.Arrays;
 import java.util.LinkedList;

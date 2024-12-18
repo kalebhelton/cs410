@@ -1,24 +1,30 @@
 package compiler;
 
+import compiler.backend.CodeGenerator;
+import compiler.backend.Memory;
+import compiler.common.AtomOperation;
+import compiler.frontend.ParserProject;
+import compiler.frontend.ScannerProject;
+import compiler.frontend.Token;
+
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.util.List;
-import java.util.Scanner;
 
 public class CompilerMain {
     public static void main(String[] args) throws Exception {
+        if (args.length != 2) {
+            System.out.println("Usage: java -jar CompilerMain <input file> <output file>");
+            return;
+        }
+
         ScannerProject.initializeStates();
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter an input file path:");
-        String inputPath = scanner.nextLine();
-        System.out.println("Enter an output file name:");
-        String outputPath = scanner.nextLine();
-
-        List<Token> tokens = ScannerProject.tokenizeInput(inputPath);
+        // frontend
+        List<Token> tokens = ScannerProject.tokenizeInput(args[0]);
         ParserProject parser = new ParserProject(tokens);
         List<AtomOperation> atoms = parser.parse();
-        FileWriter atomFile = new FileWriter(outputPath);
+        FileWriter atomFile = new FileWriter(args[1]);
 
         for (AtomOperation atom : atoms) {
             atomFile.write(atom.toString());

@@ -1,4 +1,4 @@
-package compiler;
+package compiler.frontend;
 
 public enum TokenType {
     IDENTIFIER,
