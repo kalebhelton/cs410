@@ -15,12 +15,10 @@ import java.util.List;
 public class ParserProject {
     private final LinkedList<Token> tokens;
     private final LinkedList<AtomOperation> atomQueue = new LinkedList<>();
-    private boolean optimizeGlobal;  // flag to control global optimization
     private Token currentToken;  // Current Token being Processed
 
     public ParserProject(List<Token> tokens) {
         this.tokens = new LinkedList<>(tokens);
-        this.optimizeGlobal = optimizeGlobal;  // set optimization flag
         advance();
     }
 
@@ -72,33 +70,8 @@ public class ParserProject {
             reject();
         }
 
-        if (optimizeGlobal){  // remove unreachable code during parsing
-            removeUnreachableCode();
-        }
-
         return atomQueue;
     }
-
-    private void removeUnreachableCode(){
-        LinkedList <AtomOperation> optimizedAtomQueue = new LinkedList<>();
-        boolean reachable = true;
-
-        for (AtomOperation atomOP : atomQueue) {  // iterate through atomQueue + skip unreachable code
-            if (atomOP.getOp() == Operation.JMP) {
-                optimizedAtomQueue.add(atomOP);  // Add JMP and mark as unreachable
-                reachable = false;
-            } else if (atomOP.getOp() == Operation.LBL) { // Labels make code reachable again
-                reachable = true;
-                optimizedAtomQueue.add(atomOP);
-            } else if (reachable) { // Only add operations if reachable
-                optimizedAtomQueue.add(atomOP);
-            }
-        }
-
-        atomQueue.clear();
-        atomQueue.addAll(optimizedAtomQueue);  // replace the original atomQueue w/ optimized one
-    }
-
 
     private boolean block() {
         return expect(TokenType.OPENING_CURLY_BRACKET) &&

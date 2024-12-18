@@ -17,7 +17,7 @@ public class CompilerFrontend {
         List<AtomOperation> atoms = parser.parse();
 
         if(commandLineArguments.getDoGlobalOptimization()) {
-            System.out.println("Do global optimization");
+            GlobalOptimizer.run(atoms);
         }
 
         FileWriter atomFile = new FileWriter(commandLineArguments.getOutput());
