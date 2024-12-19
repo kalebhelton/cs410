@@ -52,7 +52,7 @@ public class CommandLineArguments {
             throw new IllegalArgumentException("Missing argument: input");
         }
 
-        if(output == null) {
+        if(mode != 2 && output == null) {
             throw new IllegalArgumentException("Missing argument: output");
         }
 

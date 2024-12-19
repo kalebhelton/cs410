@@ -3,6 +3,7 @@ package compiler;
 import compiler.backend.CompilerBackend;
 import compiler.common.CommandLineArguments;
 import compiler.frontend.CompilerFrontend;
+import compiler.vm.MiniVM;
 
 public class CompilerMain {
     public static void main(String[] args) throws Exception {
@@ -16,7 +17,7 @@ public class CompilerMain {
                 CompilerBackend.main(args);
                 break;
             case 2:
-                // TODO: call virtual machine
+                MiniVM.main(new String[] {commandLineArguments.getInput()});
                 break;
             default:
         }

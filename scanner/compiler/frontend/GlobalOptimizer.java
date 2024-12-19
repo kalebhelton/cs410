@@ -68,20 +68,8 @@ public class GlobalOptimizer {
             double right = parseFactor(atom.getRight(), variables);
 
             switch (op) {
-                case ADD:
-                    variables.put(atom.getResult(), left + right);
-                    break;
-                case SUB:
-                    variables.put(atom.getResult(), left - right);
-                    break;
-                case MUL:
-                    variables.put(atom.getResult(), left * right);
-                    break;
-                case DIV:
-                    variables.put(atom.getResult(), left / right);
-                    break;
-                case MOV:
-                    variables.put(atom.getResult(), left);
+                case ADD, SUB, MUL, DIV, MOV:
+                    assignment(atom, variables);
                     break;
                 case TST:
                     if(!testComparison(left, right, atom.getCmp())) {
@@ -108,10 +96,69 @@ public class GlobalOptimizer {
 
                         // prevent incrementing i
                         continue;
+                    } else {
+                        i = simulateLoop(atoms, variables, i - 1);
                     }
             }
 
             i++;
+        }
+    }
+
+    private static int simulateLoop(List<AtomOperation> atoms, HashMap<String, Double> variables, int labelIndex) {
+        AtomOperation beforeLabel = atoms.get(labelIndex);
+        boolean isLoop = beforeLabel != null && beforeLabel.getOp() == Operation.LBL && (beforeLabel.getDest().contains("while") || beforeLabel.getDest().contains("for"));
+
+        if (!isLoop) {
+            return labelIndex;
+        }
+
+        String labelNumber = beforeLabel.getDest().substring(beforeLabel.getDest().lastIndexOf("_") + 1);
+        AtomOperation test = atoms.get(labelIndex + 1);
+        double left = parseFactor(test.getLeft(), variables);
+        double right = parseFactor(test.getRight(), variables);
+        int i = labelIndex + 2;
+
+        while (i < atoms.size() && testComparison(left, right, test.getCmp())) {
+            if (atoms.get(i).getOp() == Operation.LBL || atoms.get(i).getOp() == Operation.JMP) {
+                if (atoms.get(i).getDest().substring(atoms.get(i).getDest().lastIndexOf("_") + 1).equals(labelNumber)) {
+                    i = labelIndex + 2;
+                    continue;
+                } else if (atoms.get(i).getOp() == Operation.LBL && atoms.get(i).getDest().startsWith("before")) {
+                    i = simulateLoop(atoms, variables, i) + 1;
+                }
+            }
+
+            assignment(atoms.get(i), variables);
+
+            left = parseFactor(test.getLeft(), variables);
+            right = parseFactor(test.getRight(), variables);
+            i++;
+        }
+
+        return i;
+    }
+
+    private static void assignment(AtomOperation atom, HashMap<String, Double> variables) {
+        double left = parseFactor(atom.getLeft(), variables);
+        double right = parseFactor(atom.getRight(), variables);
+
+        switch (atom.getOp()) {
+            case ADD:
+                variables.put(atom.getResult(), left + right);
+                break;
+            case SUB:
+                variables.put(atom.getResult(), left - right);
+                break;
+            case MUL:
+                variables.put(atom.getResult(), left * right);
+                break;
+            case DIV:
+                variables.put(atom.getResult(), left / right);
+                break;
+            case MOV:
+                variables.put(atom.getResult(), left);
+                break;
         }
     }
 
