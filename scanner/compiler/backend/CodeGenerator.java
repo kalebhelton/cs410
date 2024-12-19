@@ -76,6 +76,8 @@ public class CodeGenerator {
      * @param atoms the atoms to convert
      */
     public void generateMachineCode(List<AtomOperation> atoms, boolean optimizeFlag) {
+        memory.putInMemory(null, 1, true);
+
         for (AtomOperation atom : atoms) {
             translateAtomToMachineCode(atom);
         }
