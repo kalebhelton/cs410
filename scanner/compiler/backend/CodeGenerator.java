@@ -75,14 +75,16 @@ public class CodeGenerator {
      * Converts a list of atoms into machine code
      * @param atoms the atoms to convert
      */
-    public void generateMachineCode(List<AtomOperation> atoms) {
+    public void generateMachineCode(List<AtomOperation> atoms, boolean optimizeFlag) {
         for (AtomOperation atom : atoms) {
             translateAtomToMachineCode(atom);
         }
 
         encodeInstruction(MachineOperation.HLT, 0, 0, 0);
         secondPass();
-        optimizeLoadStore(); //Still needs a flag to turn on and off
+        if(optimizeFlag){
+        optimizeLoadStore();
+        }
     }
 
     /**

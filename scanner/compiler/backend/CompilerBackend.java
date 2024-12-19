@@ -15,14 +15,17 @@ public class CompilerBackend {
         atomReader.close();
 
         // Code Generator Implementation
+        boolean optimizeFlag = false;
         Memory memory = new Memory();
         CodeGenerator codeGenerator = new CodeGenerator(memory);
 
         if(commandLineArguments.getDoLocalOptimization()) {
             System.out.println("Do local optimization");
+            optimizeFlag = true;
+
         }
 
-        codeGenerator.generateMachineCode(atoms);
+        codeGenerator.generateMachineCode(atoms, optimizeFlag);
         byte[] memoryBytes = memory.encode();
 
         FileOutputStream writer = new FileOutputStream(commandLineArguments.getOutput());
