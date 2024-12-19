@@ -13,16 +13,45 @@ public class GlobalOptimizer {
         removeUnreachableConditions(atoms);
     }
 
+    // private static void removeBetweenJumpAndLabel(List<AtomOperation> atoms) {
+    //     int i = 0;
+
+    //     while(i < atoms.size()) {
+    //         if(atoms.get(i).getOp() == Operation.JMP) {
+    //             while (i < atoms.size() && atoms.get(i).getOp() != Operation.LBL) {
+    //                 atoms.remove(i);
+    //             }
+    //         }
+
+    //         i++;
+    //     }
+    // }
     private static void removeBetweenJumpAndLabel(List<AtomOperation> atoms) {
         int i = 0;
+        boolean jumpFound = false;
 
         while(i < atoms.size()) {
+            //if a jump operation is found set the flag but continue to look at the next op
             if(atoms.get(i).getOp() == Operation.JMP) {
-                while (i < atoms.size() && atoms.get(i).getOp() != Operation.LBL) {
-                    atoms.remove(i);
-                }
+                jumpFound = true;
+                i++;
+                continue;
             }
-
+            //if the flag is set and the next op is lbl, turn the flag off and continue bc correct
+            if(jumpFound && atoms.get(i).getOp() == Operation.LBL) {
+                jumpFound = false;
+                i++;
+                continue;
+            }
+            //if jump was never found continue
+            if(!jumpFound){
+                i++;
+                continue;
+            }
+            //otherwise code between jump and lbl so remove until lbl is found and flag is reset
+            else{
+                atoms.remove(i);
+            }
             i++;
         }
     }
