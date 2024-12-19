@@ -84,8 +84,9 @@ public class CodeGenerator {
 
         encodeInstruction(MachineOperation.HLT, 0, 0, 0);
         secondPass();
+
         if(optimizeFlag){
-        optimizeLoadStore();
+            optimizeLoadStore();
         }
     }
 
@@ -94,7 +95,6 @@ public class CodeGenerator {
      * @param atom the atom to translate into machine code
      */
     private void translateAtomToMachineCode(AtomOperation atom) {
-
         switch (atom.getOp()) {
             case ADD:
                 encodeMathOperation(MachineOperation.ADD, atom.getLeft(), atom.getRight(), atom.getResult());
@@ -207,16 +207,10 @@ public class CodeGenerator {
     }
 
     public void secondPass() {
-        for (int i = 0; i < memory.getProgramMemorySize(); i++) {
-            int instruction = memory.getProgramMemory()[i];
-            MachineOperation operation = MachineOperation.values()[(instruction >> 28) & 0xF];
+        int[] programMemory = memory.getProgramMemory();
 
-            if (operation == MachineOperation.JMP) {
-                String label = labelReferences.get(i);
-                int address = labelTable.get(label) * 4;
-                instruction = (instruction & 0xFFF00000) | (address & 0xFFFFF);
-                memory.replaceProgramMemory(i, instruction);
-            }
+        for(int address : labelReferences.keySet()) {
+            memory.replaceProgramMemory(address, programMemory[address] | (address));
         }
     }
 }

@@ -14,18 +14,10 @@ public class CompilerBackend {
         List<AtomOperation> atoms = atomReader.readAtoms();
         atomReader.close();
 
-        // Code Generator Implementation
-        boolean optimizeFlag = false;
         Memory memory = new Memory();
         CodeGenerator codeGenerator = new CodeGenerator(memory);
 
-        if(commandLineArguments.getDoLocalOptimization()) {
-            System.out.println("Do local optimization");
-            optimizeFlag = true;
-
-        }
-
-        codeGenerator.generateMachineCode(atoms, optimizeFlag);
+        codeGenerator.generateMachineCode(atoms, commandLineArguments.getDoLocalOptimization());
         byte[] memoryBytes = memory.encode();
 
         FileOutputStream writer = new FileOutputStream(commandLineArguments.getOutput());
