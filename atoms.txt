@@ -1,6 +1,1 @@
 (MOV, 10, , x)
-(LBL, , , , , before_while_1)
-(TST, x, 15, , 5, after_while_1)
-(ADD, x, 1, x)
-(JMP, , , , , before_while_1)
-(LBL, , , , , after_while_1)

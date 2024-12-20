@@ -1,6 +1,7 @@
 package compiler.backend;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -91,7 +92,7 @@ public class Memory {
      * Encodes the entirety of memory into a byte array
      * @return a byte array representing the machine's initial memory
      */
-    public byte[] encode() {
+    public byte[] encode() throws IOException {
         ByteArrayOutputStream memoryOutput = new ByteArrayOutputStream();
 
         for (int instruction : programMemory) {
@@ -100,6 +101,8 @@ public class Memory {
             memoryOutput.write((byte) (instruction >> 8));
             memoryOutput.write((byte) instruction);
         }
+
+        memoryOutput.write(new byte[PROGRAM_MEMORY_SIZE * 4 - memoryOutput.size()]);
 
         for (double value : generalMemory) {
             long valueLongBits = Double.doubleToLongBits(value);
