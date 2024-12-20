@@ -47,12 +47,22 @@ public class CodeGenerator {
             int address2 = instruction2 & 0xFFFFF;
     
             //Load and a store to the same address
+            
+            // if (operation1 == MachineOperation.LOD && operation2 == MachineOperation.STO && address1 == address2) {
+            //     //Remove redundant load
+            //     for (int j = i; j < programMemorySize - 1; j++) {
+            //         programMemory[j] = programMemory[j + 1];
+            //     }
+            //     programMemorySize--; //Removes the load
+            //     i--; //Recheck index
+            // }
+
             if (operation1 == MachineOperation.LOD && operation2 == MachineOperation.STO && address1 == address2) {
-                //Remove redundant load
-                for (int j = i; j < programMemorySize - 1; j++) {
-                    programMemory[j] = programMemory[j + 1];
+                //Remove redundant load and store 
+                for (int j = i; j < programMemorySize - 2; j++) {
+                    programMemory[j] = programMemory[j + 2];
                 }
-                programMemorySize--; //Removes the load
+                programMemorySize -= 2; //Removes the load and store
                 i--; //Recheck index
             }
             //Store and then load to the same address
