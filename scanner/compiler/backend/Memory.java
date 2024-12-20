@@ -105,16 +105,16 @@ public class Memory {
         memoryOutput.write(new byte[PROGRAM_MEMORY_SIZE * 4 - memoryOutput.size()]);
 
         for (double value : generalMemory) {
-            long valueLongBits = Double.doubleToLongBits(value);
+            long bits = value % 1 == 0 ? (long) value << 32 : Double.doubleToLongBits(value);
 
-            memoryOutput.write((byte) (valueLongBits >> 56));
-            memoryOutput.write((byte) (valueLongBits >> 48));
-            memoryOutput.write((byte) (valueLongBits >> 40));
-            memoryOutput.write((byte) (valueLongBits >> 32));
-            memoryOutput.write((byte) (valueLongBits >> 24));
-            memoryOutput.write((byte) (valueLongBits >> 16));
-            memoryOutput.write((byte) (valueLongBits >> 8));
-            memoryOutput.write((byte) valueLongBits);
+            memoryOutput.write((byte) (bits >> 56));
+            memoryOutput.write((byte) (bits >> 48));
+            memoryOutput.write((byte) (bits >> 40));
+            memoryOutput.write((byte) (bits >> 32));
+            memoryOutput.write((byte) (bits >> 24));
+            memoryOutput.write((byte) (bits >> 16));
+            memoryOutput.write((byte) (bits >> 8));
+            memoryOutput.write((byte) bits);
         }
 
         return memoryOutput.toByteArray();
