@@ -86,7 +86,7 @@ public class CodeGenerator {
      * @param atoms the atoms to convert
      */
     public void generateMachineCode(List<AtomOperation> atoms, boolean optimizeFlag) {
-        memory.putInMemory(null, 1, true);
+        memory.addProgramMemory(1);
 
         for (AtomOperation atom : atoms) {
             translateAtomToMachineCode(atom);
@@ -163,7 +163,7 @@ public class CodeGenerator {
     private void encodeInstruction(MachineOperation operation, int cmp, int r, int a) {
         int instruction = (operation.ordinal() << 28) | (cmp << 24) | (r << 20) | a;
 
-        memory.putInMemory(null, instruction, true);
+        memory.addProgramMemory(instruction);
     }
 
     /**
@@ -208,11 +208,11 @@ public class CodeGenerator {
      */
     private void storeOperationConstants(String left, String right) {
         if (left != null && Character.isDigit(left.charAt(0))) {
-            memory.putInMemory(left, Double.parseDouble(left), false);
+            memory.putInMemory(left, Float.parseFloat(left));
         }
 
         if (right != null && Character.isDigit(right.charAt(0))) {
-            memory.putInMemory(right, Double.parseDouble(right), false);
+            memory.putInMemory(right, Float.parseFloat(right));
         }
     }
 

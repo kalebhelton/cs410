@@ -9,23 +9,18 @@ public class Memory {
     private static final long MAX_MEMORY_SIZE = (long) Math.pow(2, 20) - 1;
     private static final int PROGRAM_MEMORY_SIZE = 512;
 
-    private final int[] programMemory = new int[PROGRAM_MEMORY_SIZE / 4];
+    private final int[] programMemory = new int[PROGRAM_MEMORY_SIZE];
     private int programMemoryIndex = 0;
-    private final ArrayList<Double> generalMemory = new ArrayList<>();
+    private final ArrayList<Float> generalMemory = new ArrayList<>();
     private final HashMap<String, Integer> memoryMap = new HashMap<>();
 
     /**
-     * Inserts a value into memory
-     * @param symbol the symbol representing the value, only used for general memory
+     * Inserts a value into general memory
+     * @param symbol the symbol representing the value
      * @param value the value to insert
-     * @param isProgramMemory whether the value should go into program or general memory
      */
-    public void putInMemory(String symbol, double value, boolean isProgramMemory) {
-        if(isProgramMemory) {
-            addProgramMemory((int) value);
-        } else {
-            memoryMap.put(symbol, addGeneralMemory(value));
-        }
+    public void putInMemory(String symbol, float value) {
+        memoryMap.put(symbol, addGeneralMemory(value));
     }
 
     /**
@@ -35,10 +30,10 @@ public class Memory {
      */
     public int getMemoryAddress(String symbol) {
         if(!memoryMap.containsKey(symbol)) {
-            putInMemory(symbol, 0, false);
+            putInMemory(symbol, 0);
         }
 
-        return memoryMap.get(symbol) * 8 + PROGRAM_MEMORY_SIZE;
+        return memoryMap.get(symbol) + PROGRAM_MEMORY_SIZE;
     }
 
     public void replaceProgramMemory(int address, int value) {
@@ -49,7 +44,7 @@ public class Memory {
      * Sequentially adds a value into program memory
      * @param value the value to insert into program memory -> instructions stored here
      */
-    private void addProgramMemory(int value) {
+    public void addProgramMemory(int value) {
         if(programMemoryIndex >= PROGRAM_MEMORY_SIZE) {
             throw new OutOfMemoryError("Out of program memory");
         }
@@ -62,7 +57,7 @@ public class Memory {
      * @param value the value to insert into general memory -> variables and constants stored here
      * @return the address the value is stored at
      */
-    private int addGeneralMemory(double value) {
+    private int addGeneralMemory(float value) {
         if(generalMemory.size() + PROGRAM_MEMORY_SIZE >= MAX_MEMORY_SIZE) {
             throw new OutOfMemoryError("Out of general memory");
         }
@@ -92,7 +87,7 @@ public class Memory {
      * Encodes the entirety of memory into a byte array
      * @return a byte array representing the machine's initial memory
      */
-    public byte[] encode() throws IOException {
+    public byte[] encode() {
         ByteArrayOutputStream memoryOutput = new ByteArrayOutputStream();
 
         for (int instruction : programMemory) {
@@ -102,19 +97,13 @@ public class Memory {
             memoryOutput.write((byte) instruction);
         }
 
-        memoryOutput.write(new byte[PROGRAM_MEMORY_SIZE * 4 - memoryOutput.size()]);
+        for (float value : generalMemory) {
+            int valueBits = Float.floatToIntBits(value);
 
-        for (double value : generalMemory) {
-            long valueLongBits = Double.doubleToLongBits(value);
-
-            memoryOutput.write((byte) (valueLongBits >> 56));
-            memoryOutput.write((byte) (valueLongBits >> 48));
-            memoryOutput.write((byte) (valueLongBits >> 40));
-            memoryOutput.write((byte) (valueLongBits >> 32));
-            memoryOutput.write((byte) (valueLongBits >> 24));
-            memoryOutput.write((byte) (valueLongBits >> 16));
-            memoryOutput.write((byte) (valueLongBits >> 8));
-            memoryOutput.write((byte) valueLongBits);
+            memoryOutput.write((byte) (valueBits >> 24));
+            memoryOutput.write((byte) (valueBits >> 16));
+            memoryOutput.write((byte) (valueBits >> 8));
+            memoryOutput.write((byte) valueBits);
         }
 
         return memoryOutput.toByteArray();
