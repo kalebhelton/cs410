@@ -217,10 +217,17 @@ public class CodeGenerator {
     }
 
     public void secondPass() {
-        int[] programMemory = memory.getProgramMemory();
+        for (int i = 0; i < memory.getProgramMemorySize(); i++) {
+            int instruction = memory.getProgramMemory()[i];
 
-        for(int address : labelReferences.keySet()) {
-            memory.replaceProgramMemory(address, programMemory[address] | (address));
+            MachineOperation operation = MachineOperation.values()[(instruction >> 28) & 0xF];
+
+            if (operation == MachineOperation.JMP) {
+                String label = labelReferences.get(i);
+                int address = labelTable.get(label) - 1;
+                instruction = (instruction & 0xFFF00000) | (address & 0xFFFFF);
+                memory.replaceProgramMemory(i, instruction);
+            }
         }
     }
 }
