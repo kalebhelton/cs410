@@ -47,11 +47,11 @@ public class CodeGenerator {
             int address2 = instruction2 & 0xFFFFF;
 
               // Check if the first operation modifies a value
-        if (operation1 == MachineOperation.STO) {
-            dirtyAddresses.put(address1, false); // Value is stored, not dirty
-        } else if (operation1 == MachineOperation.LOD) {
-            dirtyAddresses.put(address1, true); // Value is loaded, marked as dirty
-        }
+        // if (operation1 == MachineOperation.STO) {
+        //     dirtyAddresses.put(address1, false); // Value is stored, not dirty
+        // } else if (operation1 == MachineOperation.LOD) {
+        //     dirtyAddresses.put(address1, true); // Value is loaded, marked as dirty
+        // }
     
             //Load and a store to the same address
             
@@ -66,14 +66,14 @@ public class CodeGenerator {
 
             // Optimize redundant LOD/STO pairs to the same address
         if (operation1 == MachineOperation.LOD && operation2 == MachineOperation.STO && address1 == address2) {
-            if (!dirtyAddresses.getOrDefault(address1, true)) {
+            // if (!dirtyAddresses.getOrDefault(address1, true)) {
                 // If the value in the register hasn't changed, remove both LOD and STO
                 for (int j = i; j < programMemorySize - 2; j++) {
                     programMemory[j] = programMemory[j + 2];
                 }
                 programMemorySize -= 2; // Removes both LOD and STO
                 i--; // Recheck the index
-            }
+            // }
         }
             // Optimize redundant STO/LOD pairs to the same address
         if (operation1 == MachineOperation.STO && operation2 == MachineOperation.LOD && address1 == address2) {
@@ -86,9 +86,9 @@ public class CodeGenerator {
         }
 
         // Ensure dirty values are stored back before the program ends or another operation uses the address
-        if (operation1 == MachineOperation.LOD && dirtyAddresses.getOrDefault(address1, true)) {
-            dirtyAddresses.put(address1, false); // Clear dirty flag
-        }
+        // if (operation1 == MachineOperation.LOD && dirtyAddresses.getOrDefault(address1, true)) {
+        //     dirtyAddresses.put(address1, false); // Clear dirty flag
+        // }
     }
     
         //Resets memory size
