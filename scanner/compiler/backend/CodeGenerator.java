@@ -45,6 +45,13 @@ public class CodeGenerator {
 
             int address1 = instruction1 & 0xFFFFF;
             int address2 = instruction2 & 0xFFFFF;
+
+              // Check if the first operation modifies a value
+        if (operation1 == MachineOperation.STO) {
+            dirtyAddresses.put(address1, false); // Value is stored, not dirty
+        } else if (operation1 == MachineOperation.LOD) {
+            dirtyAddresses.put(address1, true); // Value is loaded, marked as dirty
+        }
     
             //Load and a store to the same address
             
@@ -57,24 +64,32 @@ public class CodeGenerator {
             //     i--; //Recheck index
             // }
 
-            if (operation1 == MachineOperation.LOD && operation2 == MachineOperation.STO && address1 == address2) {
-                //Remove redundant load and store 
+            // Optimize redundant LOD/STO pairs to the same address
+        if (operation1 == MachineOperation.LOD && operation2 == MachineOperation.STO && address1 == address2) {
+            if (!dirtyAddresses.getOrDefault(address1, true)) {
+                // If the value in the register hasn't changed, remove both LOD and STO
                 for (int j = i; j < programMemorySize - 2; j++) {
                     programMemory[j] = programMemory[j + 2];
                 }
-                programMemorySize -= 2; //Removes the load and store
-                i--; //Recheck index
-            }
-            //Store and then load to the same address
-            if (operation1 == MachineOperation.STO && operation2 == MachineOperation.LOD && address1 == address2) {
-                //Remove redundant store and load
-                for (int j = i; j < programMemorySize - 2; j++) {
-                    programMemory[j] = programMemory[j + 2];
-                }
-                programMemorySize -= 2; //Removes the load and store
-                i--; //Recheck index
+                programMemorySize -= 2; // Removes both LOD and STO
+                i--; // Recheck the index
             }
         }
+            // Optimize redundant STO/LOD pairs to the same address
+        if (operation1 == MachineOperation.STO && operation2 == MachineOperation.LOD && address1 == address2) {
+            // Remove the redundant STO and LOD
+            for (int j = i; j < programMemorySize - 2; j++) {
+                programMemory[j] = programMemory[j + 2];
+            }
+            programMemorySize -= 2; // Removes both STO and LOD
+            i--; // Recheck the index
+        }
+
+        // Ensure dirty values are stored back before the program ends or another operation uses the address
+        if (operation1 == MachineOperation.LOD && dirtyAddresses.getOrDefault(address1, true)) {
+            dirtyAddresses.put(address1, false); // Clear dirty flag
+        }
+    }
     
         //Resets memory size
         memory.setProgramMemorySize(programMemorySize);
